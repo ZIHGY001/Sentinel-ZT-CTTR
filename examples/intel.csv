@@ -1,0 +1,2 @@
+type,value,source,confidence,valid_from,valid_until,tlp
+ip,203.0.113.50,synthetic-training-feed,90,2026-09-19T12:00:00Z,2026-09-21T12:00:00Z,CLEAR

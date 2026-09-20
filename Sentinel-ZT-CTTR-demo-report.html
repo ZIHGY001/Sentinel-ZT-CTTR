@@ -1,0 +1,906 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Sentinel-ZT-CTTR · 应急研判报告</title><style>
+:root{--bg:#f3f5f7;--ink:#152536;--muted:#657585;--line:#dde4ea;--accent:#087f8c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+header{background:#102b3a;color:#f6fbff;padding:44px max(28px,calc((100vw - 1160px)/2));border-bottom:5px solid #40c5bd}
+.eyebrow{font-size:12px;letter-spacing:3px;color:#79d9d3;font-weight:700}h1{font-size:34px;line-height:1.3;margin:12px 0}header p{color:#c3d4dc;max-width:820px;margin:12px 0 0}
+main{max-width:1216px;padding:30px 28px 56px;margin:auto}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.metric{background:white;border:1px solid var(--line);border-radius:12px;padding:18px 22px}.metric strong{display:block;font-size:30px;line-height:1.4}.metric span{color:var(--muted);font-size:13px}
+.section-title{display:flex;justify-content:space-between;align-items:baseline;margin-top:34px}h2{font-size:21px;margin:0 0 16px}h3{font-size:17px;margin:0}h4{margin-bottom:8px}.muted{color:var(--muted);font-size:13px}.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px}.case{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}.case-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.tag{padding:3px 8px;border-radius:5px;font-size:10px;font-weight:750;letter-spacing:1px;background:#eaf0f3}.critical{background:#ffebe9;color:#b02d27}.high{background:#fff0d9;color:#925a00}.medium{background:#dff2f3;color:#08656c}.risk{font-size:40px;font-weight:750;margin:14px 0 5px}.risk small{font-size:15px;color:var(--muted);font-weight:400}.track{height:5px;background:#e8edf1;border-radius:3px}.track i{height:100%;display:block;background:var(--accent);border-radius:3px}.case p{margin:12px 0 0;font-size:12px;overflow-wrap:anywhere}
+.finding{margin-bottom:9px;background:#fff;border:1px solid var(--line);border-radius:8px}.finding summary{cursor:pointer;display:flex;gap:16px;align-items:center;padding:16px}.finding summary::before{content:'+';color:var(--accent);font-weight:bold}.finding[open] summary::before{content:'−'}.finding strong{flex:1;font-weight:600}.finding-host{font-size:12px;color:var(--muted)}.code{font:12px monospace;color:var(--accent);background:#e9f5f4;padding:3px 7px;border-radius:4px}.detail{padding:0 22px 20px;border-top:1px solid var(--line)}pre{font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7f9;padding:14px;border-radius:6px;max-height:400px;overflow:auto}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:white}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;vertical-align:top;padding:14px;border-bottom:1px solid var(--line)}th{background:#eaf0f3;color:#456071;font-size:12px}td small{display:block;color:#a05c19;overflow-wrap:anywhere}td:nth-child(3){min-width:280px}.note{padding:17px 20px;background:#e5f2f3;border-left:3px solid var(--accent);margin:24px 0;font-size:13px}footer{font-size:12px;color:var(--muted);margin-top:30px;overflow-wrap:anywhere}
+@media(max-width:650px){header{padding:28px 20px}h1{font-size:26px}main{padding:20px 16px}.metrics{grid-template-columns:repeat(2,1fr)}.finding summary{gap:8px;flex-wrap:wrap}.finding-host{display:none}.section-title{display:block}.metric{padding:14px}}
+@media print{header{background:white;color:#152536;padding:15px 0}header p,.eyebrow{color:#456071}main{padding:12px 0}.finding{break-inside:avoid}.case{break-inside:avoid}.note{background:white}}
+</style></head><body><header><div class="eyebrow">SENTINEL-ZT-CTTR / INCIDENT RESPONSE</div>
+<h1>从行为证据，到有边界的响应。</h1><p>关联威胁情报、端点行为与访问上下文。每个结论都能追溯证据，每次处置都受授权、时效与资产范围约束。</p></header><main><div class="metrics"><div class="metric"><strong>23</strong><span>已分析事件</span></div><div class="metric"><strong>27</strong><span>检测线索</span></div><div class="metric"><strong>3</strong><span>高风险资产</span></div><div class="metric"><strong>3</strong><span>可授权的处置计划</span></div></div><div class="section-title"><h2>资产研判</h2><span class="muted">风险分数为启发式排序，不是失陷概率</span></div><div class="cases"><article class="case"><div class="case-head"><h3>agent-demo</h3>
+          <span class="tag critical">CRITICAL</span></div>
+          <div class="risk">99<small> / 99</small></div>
+          <div class="track"><i style="width:99%"></i></div>
+          <p>B003 · B004 · B005 · B016 · C003 · I001</p><p class="muted">6 条关联证据 · 待分析员核验</p></article><article class="case"><div class="case-head"><h3>web-demo</h3>
+          <span class="tag critical">CRITICAL</span></div>
+          <div class="risk">99<small> / 99</small></div>
+          <div class="track"><i style="width:99%"></i></div>
+          <p>B002 · B006 · B007 · B008 · B014 · C002 · C004 · I001</p><p class="muted">6 条关联证据 · 待分析员核验</p></article><article class="case"><div class="case-head"><h3>workstation-demo</h3>
+          <span class="tag critical">CRITICAL</span></div>
+          <div class="risk">99<small> / 99</small></div>
+          <div class="track"><i style="width:99%"></i></div>
+          <p>B001 · B011 · B012 · B018 · C001 · C004 · I001</p><p class="muted">9 条关联证据 · 待分析员核验</p></article></div><div class="section-title"><h2>行为与情报证据</h2><span class="muted">展开查看规则解释、误报场景和原始字段</span></div><details class="finding"><summary><span class="code">B001</span>
+          <strong>Office / 文档阅读器启动脚本解释器</strong><span class="finding-host">workstation-demo</span>
+          <b>55</b></summary><div class="detail"><p>文档进程与脚本解释器的父子关系构成执行线索。</p>
+          <p class="muted">误报场景：经批准的宏、报表导出和运维插件。</p>
+          <p>ATT&amp;CK：T1204.002, T1059 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;process_start&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;parent_process&quot;: &quot;C:\\Program Files\\Office\\WINWORD.EXE&quot;,
+    &quot;process&quot;: &quot;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:50:00Z&quot;,
+    &quot;user&quot;: &quot;demo-user&quot;,
+    &quot;process_name&quot;: &quot;powershell.exe&quot;,
+    &quot;parent_process_name&quot;: &quot;winword.exe&quot;,
+    &quot;id&quot;: &quot;evt-a12a1b2abc33c970f1db712f&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 1,
+      &quot;raw_sha256&quot;: &quot;3d41c312c1ba06d77c9022a060b53b27586625203c04024a7b08a23945e4c0df&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B012</span>
+          <strong>文件名包含 Unicode 方向控制字符</strong><span class="finding-host">workstation-demo</span>
+          <b>40</b></summary><div class="detail"><p>方向控制字符可能掩盖真实文件扩展名。</p>
+          <p class="muted">误报场景：国际化文档可能合法包含这些字符。</p>
+          <p>ATT&amp;CK：T1036.002 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;file_write&quot;,
+    &quot;file_path&quot;: &quot;C:\\Users\\demo\\Downloads\\offer‮fdp.exe&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:50:10Z&quot;,
+    &quot;id&quot;: &quot;evt-c90c50720524d02075825751&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 2,
+      &quot;raw_sha256&quot;: &quot;c90c50720524d02075825751be6dc287d306382c87e5549e90f390e19cf22777&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B011</span>
+          <strong>未批准的持久化配置变更</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>计划任务、服务或启动项变更超出批准基线。</p>
+          <p class="muted">误报场景：资产变更清单不完整。</p>
+          <p>ATT&amp;CK：T1053, T1547 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;scheduled_task&quot;,
+    &quot;approved&quot;: false,
+    &quot;event_type&quot;: &quot;persistence&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:50:50Z&quot;,
+    &quot;id&quot;: &quot;evt-fbf7d04b39735cd5cd1b7750&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 3,
+      &quot;raw_sha256&quot;: &quot;fbf7d04b39735cd5cd1b7750581f25531839c5b805c20491ed4417e0f432c993&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:51:40Z&quot;,
+    &quot;id&quot;: &quot;evt-e634358dd96f3b35d2660863&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 4,
+      &quot;raw_sha256&quot;: &quot;e634358dd96f3b35d2660863aad00bd33c26091d3f4649e7eb35dcf18ca7d2c2&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">B008</span>
+          <strong>Jeecg 字典接口出现 SQL 语法线索</strong><span class="finding-host">web-demo</span>
+          <b>45</b></summary><div class="detail"><p>参数中出现SQL语法只能证明可疑请求，不能证明注入成立。</p>
+          <p class="muted">误报场景：合法过滤查询、自测请求。</p>
+          <p>ATT&amp;CK：T1190 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;http&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;path&quot;: &quot;/sys/dict/getDictItems/demo?filterSql=select%20example&quot;,
+    &quot;src_ip&quot;: &quot;198.51.100.20&quot;,
+    &quot;status&quot;: 200,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:00Z&quot;,
+    &quot;path_normalized&quot;: &quot;/sys/dict/getdictitems/demo&quot;,
+    &quot;query_normalized&quot;: &quot;filtersql=select example&quot;,
+    &quot;id&quot;: &quot;evt-0d301feb7679b8351dbf5a35&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 10,
+      &quot;raw_sha256&quot;: &quot;521d9c9b99f8cc2de6f6a3beb485bcf0d28a8a94a736ded32faa51b69714c7df&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B002</span>
+          <strong>Web / 数据库服务启动命令解释器</strong><span class="finding-host">web-demo</span>
+          <b>65</b></summary><div class="detail"><p>服务进程产生交互式或脚本子进程，需关联请求及变更记录。</p>
+          <p class="muted">误报场景：应用合法调用外部工具、备份任务。</p>
+          <p>ATT&amp;CK：T1059 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;process_start&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;parent_process&quot;: &quot;/usr/bin/java&quot;,
+    &quot;process&quot;: &quot;/bin/sh&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:30Z&quot;,
+    &quot;process_name&quot;: &quot;sh&quot;,
+    &quot;parent_process_name&quot;: &quot;java&quot;,
+    &quot;id&quot;: &quot;evt-f061e6db5e04f698e89c5447&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 11,
+      &quot;raw_sha256&quot;: &quot;758e796d521088f6439e77a8a8852951fd1f342f9428b0058228423f83477529&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:40Z&quot;,
+    &quot;id&quot;: &quot;evt-b7393a3875c1ac286a1d31c7&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 5,
+      &quot;raw_sha256&quot;: &quot;b7393a3875c1ac286a1d31c73d0e5faf0c1808e665a7d2a8db2bf11da7be632d&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">B003</span>
+          <strong>未验证的 Agent Skill 安装或修改</strong><span class="finding-host">agent-demo</span>
+          <b>55</b></summary><div class="detail"><p>未验证扩展可能改变 Agent 执行能力。</p>
+          <p class="muted">误报场景：研发调试或尚未纳入签名体系的扩展。</p>
+          <p>ATT&amp;CK：T1546 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;skill_install&quot;,
+    &quot;event_type&quot;: &quot;agent&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;skill&quot;: &quot;example-unverified&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:20Z&quot;,
+    &quot;verified&quot;: false,
+    &quot;id&quot;: &quot;evt-57d2c18de167b215af86a2ec&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 16,
+      &quot;raw_sha256&quot;: &quot;57d2c18de167b215af86a2ecd2985e02ef5923655b6ff9b7fc940c1568bf170e&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B014</span>
+          <strong>Web 根目录出现服务端脚本写入</strong><span class="finding-host">web-demo</span>
+          <b>60</b></summary><div class="detail"><p>未批准的Web根目录脚本写入，需进一步核验内容。</p>
+          <p class="muted">误报场景：部署流水线审批映射遗漏。</p>
+          <p>ATT&amp;CK：T1505.003 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;approved&quot;: false,
+    &quot;event_type&quot;: &quot;file_write&quot;,
+    &quot;file_path&quot;: &quot;/var/www/html/demo.jsp&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:20Z&quot;,
+    &quot;webroot&quot;: true,
+    &quot;id&quot;: &quot;evt-60b15a20680b9a1573a4e59f&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 12,
+      &quot;raw_sha256&quot;: &quot;60b15a20680b9a1573a4e59fcaf1128fe004c1946b0947620a0bce73a75d6808&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B004</span>
+          <strong>Agent 未授权高权限工具调用</strong><span class="finding-host">agent-demo</span>
+          <b>65</b></summary><div class="detail"><p>必须由可信工具网关提供授权判定；提示词文本本身不作为执行证据。</p>
+          <p class="muted">误报场景：接入器字段映射错误。</p>
+          <p>ATT&amp;CK：T1059 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;authorized&quot;: false,
+    &quot;event_type&quot;: &quot;agent&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:40Z&quot;,
+    &quot;tool&quot;: &quot;shell&quot;,
+    &quot;id&quot;: &quot;evt-85c22f9a079c24d5215b1aa9&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 17,
+      &quot;raw_sha256&quot;: &quot;85c22f9a079c24d5215b1aa9c0381b346ccf28a81f7754bb5d5434bead5b44ae&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:40Z&quot;,
+    &quot;id&quot;: &quot;evt-f14c9ab2cea43db7ab86ab7a&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 6,
+      &quot;raw_sha256&quot;: &quot;f14c9ab2cea43db7ab86ab7ad049898df20a18283f22aea8f7fdf109a380b2a3&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">B005</span>
+          <strong>异常读取密钥或工作负载令牌</strong><span class="finding-host">agent-demo</span>
+          <b>60</b></summary><div class="detail"><p>明确的未授权读取与敏感文件路径同时出现。</p>
+          <p class="muted">误报场景：被错误标记的备份或安全审计。</p>
+          <p>ATT&amp;CK：T1552.001 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;authorized&quot;: false,
+    &quot;event_type&quot;: &quot;file_read&quot;,
+    &quot;file_path&quot;: &quot;/var/run/secrets/kubernetes.io/serviceaccount/token&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:00Z&quot;,
+    &quot;id&quot;: &quot;evt-4708a2a8f1ba8b04ecdc14fc&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 18,
+      &quot;raw_sha256&quot;: &quot;4708a2a8f1ba8b04ecdc14fc9c135e491afc9735e22d890aa9be84df00c2921b&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">web-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.51&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.11&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:10Z&quot;,
+    &quot;id&quot;: &quot;evt-a3a36970f429e3f3dff82781&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 13,
+      &quot;raw_sha256&quot;: &quot;a3a36970f429e3f3dff82781f4d6898944d6a03d765bd275960e24f879e426af&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-c8d2dd61c20379fef7ed&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.51&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">B006</span>
+          <strong>管理接口未认证且返回成功状态</strong><span class="finding-host">web-demo</span>
+          <b>55</b></summary><div class="detail"><p>HTTP成功不证明越权成功；还需要业务审计或响应内容核验。</p>
+          <p class="muted">误报场景：公开状态接口、返回200的登录页、错误的认证字段。</p>
+          <p>ATT&amp;CK：T1190 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;authenticated&quot;: false,
+    &quot;event_type&quot;: &quot;http&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;method&quot;: &quot;PUT&quot;,
+    &quot;path&quot;: &quot;/kubepi/api/v1/sso&quot;,
+    &quot;product&quot;: &quot;kubepi&quot;,
+    &quot;status&quot;: 200,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:20Z&quot;,
+    &quot;path_normalized&quot;: &quot;/kubepi/api/v1/sso&quot;,
+    &quot;query_normalized&quot;: &quot;&quot;,
+    &quot;id&quot;: &quot;evt-798a93a4874c7c945470ce47&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 14,
+      &quot;raw_sha256&quot;: &quot;a02e52321d9234350cf7ce10dcd6d70803ccff15ed5277f403a2733f63e7e889&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B016</span>
+          <strong>非授权内网远程管理连接</strong><span class="finding-host">agent-demo</span>
+          <b>50</b></summary><div class="detail"><p>远程管理或基础服务连接超出工作负载授权范围。</p>
+          <p class="muted">误报场景：合法运维授权未接入。</p>
+          <p>ATT&amp;CK：T1021 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;authorized&quot;: false,
+    &quot;dst_ip&quot;: &quot;192.0.2.90&quot;,
+    &quot;dst_port&quot;: 6443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.12&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:20Z&quot;,
+    &quot;id&quot;: &quot;evt-e19081e9eaf51f707eb94ae5&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 19,
+      &quot;raw_sha256&quot;: &quot;e19081e9eaf51f707eb94ae570301715f117d725116696f824ec3564b91706b0&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">agent-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.12&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:40Z&quot;,
+    &quot;id&quot;: &quot;evt-9908a0fa1dc70285166515e3&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 20,
+      &quot;raw_sha256&quot;: &quot;9908a0fa1dc70285166515e3b25d0226347d62b09f2a46e70e5a7a62c38d4ded&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:40Z&quot;,
+    &quot;id&quot;: &quot;evt-d8cc71f0fa34923067b34cdd&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 7,
+      &quot;raw_sha256&quot;: &quot;d8cc71f0fa34923067b34cdd0dd557e6b58a35c7427b6b58188240c81b4b85fd&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">B007</span>
+          <strong>未授权身份创建或权限修改</strong><span class="finding-host">web-demo</span>
+          <b>70</b></summary><div class="detail"><p>由身份系统的可信审计提供授权结果。</p>
+          <p class="muted">误报场景：角色同步、应急变更尚未同步审批记录。</p>
+          <p>ATT&amp;CK：T1098 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;role_grant&quot;,
+    &quot;authorized&quot;: false,
+    &quot;event_type&quot;: &quot;identity&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:40Z&quot;,
+    &quot;id&quot;: &quot;evt-fce3302b78b2e433c6f7d2db&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 15,
+      &quot;raw_sha256&quot;: &quot;fce3302b78b2e433c6f7d2db70c2d552ec4da522ef0c519149f755b7ad3c2824&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">agent-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;domain&quot;: &quot;updates.example.test&quot;,
+    &quot;event_type&quot;: &quot;dns&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:55:00Z&quot;,
+    &quot;id&quot;: &quot;evt-55a1b4092bb6b64e905facf1&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 21,
+      &quot;raw_sha256&quot;: &quot;55a1b4092bb6b64e905facf1eebcdb9c2430bed44ddbbd004681c5318422e5ad&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-38986575b1247751d731&quot;,
+    &quot;type&quot;: &quot;domain&quot;,
+    &quot;value&quot;: &quot;updates.example.test&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;domain&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:55:40Z&quot;,
+    &quot;id&quot;: &quot;evt-1bb55a948ecb795818ec3121&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 8,
+      &quot;raw_sha256&quot;: &quot;1bb55a948ecb795818ec31211dc416b5d76f063bdadbd20b21a1d9c70e11b763&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">I001</span>
+          <strong>有效威胁情报精确命中</strong><span class="finding-host">workstation-demo</span>
+          <b>60</b></summary><div class="detail"><p>来源、置信度、分析时点和事件时点有效期均已核验；命中不等于失陷。</p>
+          <p class="muted">误报场景：共享IP、已转移域名、误报情报。</p>
+          <p>ATT&amp;CK：未映射 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:56:40Z&quot;,
+    &quot;id&quot;: &quot;evt-93322d55f4c58971c6f4d7f0&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 9,
+      &quot;raw_sha256&quot;: &quot;93322d55f4c58971c6f4d7f01e3afef236004b3ac452b53aeb32c65b4a0fdcde&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[
+  {
+    &quot;id&quot;: &quot;ioc-9d40737bea768d130aa7&quot;,
+    &quot;type&quot;: &quot;ip&quot;,
+    &quot;value&quot;: &quot;203.0.113.50&quot;,
+    &quot;source&quot;: &quot;synthetic-training-feed&quot;,
+    &quot;confidence&quot;: 90,
+    &quot;valid_from&quot;: &quot;2026-09-19T12:00:00Z&quot;,
+    &quot;valid_until&quot;: &quot;2026-09-21T12:00:00Z&quot;,
+    &quot;revoked&quot;: false,
+    &quot;tags&quot;: [
+      &quot;synthetic&quot;
+    ],
+    &quot;tlp&quot;: &quot;CLEAR&quot;,
+    &quot;field&quot;: &quot;dst_ip&quot;
+  }
+]</pre></div></details><details class="finding"><summary><span class="code">C001</span>
+          <strong>文档执行后出现情报命中外联</strong><span class="finding-host">workstation-demo</span>
+          <b>80</b></summary><div class="detail"><p>同一资产、先后有序、15分钟内的关联假设；尚未证明进程或会话因果关系。</p>
+          <p class="muted">误报场景：同一主机上互不相关的活动；请核验进程GUID和会话。</p>
+          <p>ATT&amp;CK：未映射 · correlated_hypothesis</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;process_start&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;parent_process&quot;: &quot;C:\\Program Files\\Office\\WINWORD.EXE&quot;,
+    &quot;process&quot;: &quot;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:50:00Z&quot;,
+    &quot;user&quot;: &quot;demo-user&quot;,
+    &quot;process_name&quot;: &quot;powershell.exe&quot;,
+    &quot;parent_process_name&quot;: &quot;winword.exe&quot;,
+    &quot;id&quot;: &quot;evt-a12a1b2abc33c970f1db712f&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 1,
+      &quot;raw_sha256&quot;: &quot;3d41c312c1ba06d77c9022a060b53b27586625203c04024a7b08a23945e4c0df&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:51:40Z&quot;,
+    &quot;id&quot;: &quot;evt-e634358dd96f3b35d2660863&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 4,
+      &quot;raw_sha256&quot;: &quot;e634358dd96f3b35d2660863aad00bd33c26091d3f4649e7eb35dcf18ca7d2c2&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">C004</span>
+          <strong>可疑执行后创建持久化</strong><span class="finding-host">workstation-demo</span>
+          <b>85</b></summary><div class="detail"><p>同一资产、先后有序、15分钟内的关联假设；尚未证明进程或会话因果关系。</p>
+          <p class="muted">误报场景：同一主机上互不相关的活动；请核验进程GUID和会话。</p>
+          <p>ATT&amp;CK：未映射 · correlated_hypothesis</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;process_start&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;parent_process&quot;: &quot;C:\\Program Files\\Office\\WINWORD.EXE&quot;,
+    &quot;process&quot;: &quot;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:50:00Z&quot;,
+    &quot;user&quot;: &quot;demo-user&quot;,
+    &quot;process_name&quot;: &quot;powershell.exe&quot;,
+    &quot;parent_process_name&quot;: &quot;winword.exe&quot;,
+    &quot;id&quot;: &quot;evt-a12a1b2abc33c970f1db712f&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 1,
+      &quot;raw_sha256&quot;: &quot;3d41c312c1ba06d77c9022a060b53b27586625203c04024a7b08a23945e4c0df&quot;
+    }
+  },
+  {
+    &quot;action&quot;: &quot;scheduled_task&quot;,
+    &quot;approved&quot;: false,
+    &quot;event_type&quot;: &quot;persistence&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:50:50Z&quot;,
+    &quot;id&quot;: &quot;evt-fbf7d04b39735cd5cd1b7750&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 3,
+      &quot;raw_sha256&quot;: &quot;fbf7d04b39735cd5cd1b7750581f25531839c5b805c20491ed4417e0f432c993&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">C002</span>
+          <strong>Web异常请求后出现服务进程执行</strong><span class="finding-host">web-demo</span>
+          <b>80</b></summary><div class="detail"><p>同一资产、先后有序、15分钟内的关联假设；尚未证明进程或会话因果关系。</p>
+          <p class="muted">误报场景：同一主机上互不相关的活动；请核验进程GUID和会话。</p>
+          <p>ATT&amp;CK：未映射 · correlated_hypothesis</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;http&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;path&quot;: &quot;/sys/dict/getDictItems/demo?filterSql=select%20example&quot;,
+    &quot;src_ip&quot;: &quot;198.51.100.20&quot;,
+    &quot;status&quot;: 200,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:00Z&quot;,
+    &quot;path_normalized&quot;: &quot;/sys/dict/getdictitems/demo&quot;,
+    &quot;query_normalized&quot;: &quot;filtersql=select example&quot;,
+    &quot;id&quot;: &quot;evt-0d301feb7679b8351dbf5a35&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 10,
+      &quot;raw_sha256&quot;: &quot;521d9c9b99f8cc2de6f6a3beb485bcf0d28a8a94a736ded32faa51b69714c7df&quot;
+    }
+  },
+  {
+    &quot;event_type&quot;: &quot;process_start&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;parent_process&quot;: &quot;/usr/bin/java&quot;,
+    &quot;process&quot;: &quot;/bin/sh&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:30Z&quot;,
+    &quot;process_name&quot;: &quot;sh&quot;,
+    &quot;parent_process_name&quot;: &quot;java&quot;,
+    &quot;id&quot;: &quot;evt-f061e6db5e04f698e89c5447&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 11,
+      &quot;raw_sha256&quot;: &quot;758e796d521088f6439e77a8a8852951fd1f342f9428b0058228423f83477529&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">C004</span>
+          <strong>可疑执行后创建持久化</strong><span class="finding-host">web-demo</span>
+          <b>85</b></summary><div class="detail"><p>同一资产、先后有序、15分钟内的关联假设；尚未证明进程或会话因果关系。</p>
+          <p class="muted">误报场景：同一主机上互不相关的活动；请核验进程GUID和会话。</p>
+          <p>ATT&amp;CK：未映射 · correlated_hypothesis</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;event_type&quot;: &quot;process_start&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;parent_process&quot;: &quot;/usr/bin/java&quot;,
+    &quot;process&quot;: &quot;/bin/sh&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:30Z&quot;,
+    &quot;process_name&quot;: &quot;sh&quot;,
+    &quot;parent_process_name&quot;: &quot;java&quot;,
+    &quot;id&quot;: &quot;evt-f061e6db5e04f698e89c5447&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 11,
+      &quot;raw_sha256&quot;: &quot;758e796d521088f6439e77a8a8852951fd1f342f9428b0058228423f83477529&quot;
+    }
+  },
+  {
+    &quot;approved&quot;: false,
+    &quot;event_type&quot;: &quot;file_write&quot;,
+    &quot;file_path&quot;: &quot;/var/www/html/demo.jsp&quot;,
+    &quot;host&quot;: &quot;web-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:20Z&quot;,
+    &quot;webroot&quot;: true,
+    &quot;id&quot;: &quot;evt-60b15a20680b9a1573a4e59f&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 12,
+      &quot;raw_sha256&quot;: &quot;60b15a20680b9a1573a4e59fcaf1128fe004c1946b0947620a0bce73a75d6808&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">C003</span>
+          <strong>Agent扩展或工具异常后访问凭据或内网</strong><span class="finding-host">agent-demo</span>
+          <b>85</b></summary><div class="detail"><p>同一资产、先后有序、15分钟内的关联假设；尚未证明进程或会话因果关系。</p>
+          <p class="muted">误报场景：同一主机上互不相关的活动；请核验进程GUID和会话。</p>
+          <p>ATT&amp;CK：未映射 · correlated_hypothesis</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;skill_install&quot;,
+    &quot;event_type&quot;: &quot;agent&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;skill&quot;: &quot;example-unverified&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:20Z&quot;,
+    &quot;verified&quot;: false,
+    &quot;id&quot;: &quot;evt-57d2c18de167b215af86a2ec&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 16,
+      &quot;raw_sha256&quot;: &quot;57d2c18de167b215af86a2ecd2985e02ef5923655b6ff9b7fc940c1568bf170e&quot;
+    }
+  },
+  {
+    &quot;authorized&quot;: false,
+    &quot;event_type&quot;: &quot;file_read&quot;,
+    &quot;file_path&quot;: &quot;/var/run/secrets/kubernetes.io/serviceaccount/token&quot;,
+    &quot;host&quot;: &quot;agent-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:00Z&quot;,
+    &quot;id&quot;: &quot;evt-4708a2a8f1ba8b04ecdc14fc&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 18,
+      &quot;raw_sha256&quot;: &quot;4708a2a8f1ba8b04ecdc14fc9c135e491afc9735e22d890aa9be84df00c2921b&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><details class="finding"><summary><span class="code">B018</span>
+          <strong>连接间隔高度规律，疑似心跳通信</strong><span class="finding-host">workstation-demo</span>
+          <b>40</b></summary><div class="detail"><p>6次连接，平均间隔60.0秒，间隔变异系数≤0.15。</p>
+          <p class="muted">误报场景：监控心跳、正常轮询、软件更新；单独出现不得判定C2。</p>
+          <p>ATT&amp;CK：T1071 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:51:40Z&quot;,
+    &quot;id&quot;: &quot;evt-e634358dd96f3b35d2660863&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 4,
+      &quot;raw_sha256&quot;: &quot;e634358dd96f3b35d2660863aad00bd33c26091d3f4649e7eb35dcf18ca7d2c2&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:52:40Z&quot;,
+    &quot;id&quot;: &quot;evt-b7393a3875c1ac286a1d31c7&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 5,
+      &quot;raw_sha256&quot;: &quot;b7393a3875c1ac286a1d31c73d0e5faf0c1808e665a7d2a8db2bf11da7be632d&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:53:40Z&quot;,
+    &quot;id&quot;: &quot;evt-f14c9ab2cea43db7ab86ab7a&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 6,
+      &quot;raw_sha256&quot;: &quot;f14c9ab2cea43db7ab86ab7ad049898df20a18283f22aea8f7fdf109a380b2a3&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:54:40Z&quot;,
+    &quot;id&quot;: &quot;evt-d8cc71f0fa34923067b34cdd&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 7,
+      &quot;raw_sha256&quot;: &quot;d8cc71f0fa34923067b34cdd0dd557e6b58a35c7427b6b58188240c81b4b85fd&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:55:40Z&quot;,
+    &quot;id&quot;: &quot;evt-1bb55a948ecb795818ec3121&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 8,
+      &quot;raw_sha256&quot;: &quot;1bb55a948ecb795818ec31211dc416b5d76f063bdadbd20b21a1d9c70e11b763&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;203.0.113.50&quot;,
+    &quot;dst_port&quot;: 443,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-20T11:56:40Z&quot;,
+    &quot;id&quot;: &quot;evt-93322d55f4c58971c6f4d7f0&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 9,
+      &quot;raw_sha256&quot;: &quot;93322d55f4c58971c6f4d7f01e3afef236004b3ac452b53aeb32c65b4a0fdcde&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre></div></details><div class="section-title"><h2>响应计划</h2><span class="muted">此报告没有执行任何处置</span></div><div class="table-wrap"><table><thead><tr><th>资产</th><th>动作</th><th>范围 / 下一步</th><th>状态</th></tr></thead><tbody><tr><td>agent-demo</td><td>manual_investigation</td><td>保存原始日志与文件哈希，核验时间和资产归属；核对变更、进程GUID、会话与业务影响；在身份平台撤销受影响会话并轮换相关密钥；核验异常授权；保全样本后核验并清除异常持久化，按业务恢复流程复测<small></small></td><td>人工处理</td></tr><tr><td>agent-demo</td><td>block_peer</td><td>203.0.113.50<small></small></td><td>需签名授权</td></tr><tr><td>web-demo</td><td>manual_investigation</td><td>保存原始日志与文件哈希，核验时间和资产归属；核对变更、进程GUID、会话与业务影响；在身份平台撤销受影响会话并轮换相关密钥；核验异常授权；保全样本后核验并清除异常持久化，按业务恢复流程复测<small></small></td><td>人工处理</td></tr><tr><td>web-demo</td><td>block_peer</td><td>203.0.113.51<small></small></td><td>需签名授权</td></tr><tr><td>workstation-demo</td><td>manual_investigation</td><td>保存原始日志与文件哈希，核验时间和资产归属；核对变更、进程GUID、会话与业务影响；保全样本后核验并清除异常持久化，按业务恢复流程复测<small></small></td><td>人工处理</td></tr><tr><td>workstation-demo</td><td>block_peer</td><td>203.0.113.50<small></small></td><td>需签名授权</td></tr></tbody></table></div><div class="note">零信任访问判定需由接入网关执行；本地防火墙适配器仅对指定对端实施有时限的入站、出站封禁。域名命中不自动扩展为整个云服务商封禁。</div><details><summary>数据质量与排除统计</summary><pre>{
+  &quot;events&quot;: {
+    &quot;input_events&quot;: 23,
+    &quot;analyzed_events&quot;: 23,
+    &quot;future_events&quot;: 0,
+    &quot;stale_events&quot;: 0,
+    &quot;suppressed_findings&quot;: 0,
+    &quot;duplicates&quot;: 0,
+    &quot;unsupported_events&quot;: 0
+  },
+  &quot;intel&quot;: {
+    &quot;expired&quot;: 0,
+    &quot;future&quot;: 0,
+    &quot;revoked&quot;: 0,
+    &quot;low_confidence&quot;: 0
+  },
+  &quot;warnings&quot;: []
+}</pre></details><footer>生成时间：2026-09-20T12:00:00Z<br>策略摘要：92e01901533d9ad349963391362d2eccc7d460e57b6a7e0d5a3a1318126215c4<br>Sentinel-ZT-CTTR 0.1.0 · 本地离线报告 · 日志可能含敏感字段，请按事件材料管理。</footer></main></body></html>

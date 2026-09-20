@@ -1,0 +1,23 @@
+{"event_type":"process_start","host":"workstation-demo","parent_process":"C:\\Program Files\\Office\\WINWORD.EXE","process":"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe","timestamp":"2026-09-20T11:50:00Z","user":"demo-user"}
+{"event_type":"file_write","file_path":"C:\\Users\\demo\\Downloads\\offer‮fdp.exe","host":"workstation-demo","timestamp":"2026-09-20T11:50:10Z"}
+{"action":"scheduled_task","approved":false,"event_type":"persistence","host":"workstation-demo","timestamp":"2026-09-20T11:50:50Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-20T11:51:40Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-20T11:52:40Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-20T11:53:40Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-20T11:54:40Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-20T11:55:40Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-20T11:56:40Z"}
+{"event_type":"http","host":"web-demo","method":"GET","path":"/sys/dict/getDictItems/demo?filterSql=select%20example","src_ip":"198.51.100.20","status":200,"timestamp":"2026-09-20T11:52:00Z"}
+{"event_type":"process_start","host":"web-demo","parent_process":"/usr/bin/java","process":"/bin/sh","timestamp":"2026-09-20T11:52:30Z"}
+{"approved":false,"event_type":"file_write","file_path":"/var/www/html/demo.jsp","host":"web-demo","timestamp":"2026-09-20T11:53:20Z","webroot":true}
+{"dst_ip":"203.0.113.51","dst_port":443,"event_type":"network","host":"web-demo","src_ip":"192.0.2.11","timestamp":"2026-09-20T11:54:10Z"}
+{"authenticated":false,"event_type":"http","host":"web-demo","method":"PUT","path":"/kubepi/api/v1/sso","product":"kubepi","status":200,"timestamp":"2026-09-20T11:54:20Z"}
+{"action":"role_grant","authorized":false,"event_type":"identity","host":"web-demo","timestamp":"2026-09-20T11:54:40Z"}
+{"action":"skill_install","event_type":"agent","host":"agent-demo","skill":"example-unverified","timestamp":"2026-09-20T11:53:20Z","verified":false}
+{"authorized":false,"event_type":"agent","host":"agent-demo","timestamp":"2026-09-20T11:53:40Z","tool":"shell"}
+{"authorized":false,"event_type":"file_read","file_path":"/var/run/secrets/kubernetes.io/serviceaccount/token","host":"agent-demo","timestamp":"2026-09-20T11:54:00Z"}
+{"authorized":false,"dst_ip":"192.0.2.90","dst_port":6443,"event_type":"network","host":"agent-demo","src_ip":"192.0.2.12","timestamp":"2026-09-20T11:54:20Z"}
+{"dst_ip":"203.0.113.50","dst_port":443,"event_type":"network","host":"agent-demo","src_ip":"192.0.2.12","timestamp":"2026-09-20T11:54:40Z"}
+{"domain":"updates.example.test","event_type":"dns","host":"agent-demo","timestamp":"2026-09-20T11:55:00Z"}
+{"authenticated":true,"event_type":"http","host":"clean-demo","method":"GET","path":"/health","status":200,"timestamp":"2026-09-20T11:59:00Z"}
+{"event_type":"process_start","host":"clean-demo","parent_process":"/bin/bash","process":"/usr/bin/python3","timestamp":"2026-09-20T11:59:10Z"}
