@@ -1,0 +1,18 @@
+{
+  "name": "sentinel-zt-cttr-pi-agent",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --check bridge.mjs",
+    "test": "node --test bridge.test.mjs"
+  },
+  "dependencies": {
+    "@earendil-works/pi-agent-core": "0.86.1",
+    "@earendil-works/pi-ai": "0.86.1",
+    "typebox": "^1.0.0"
+  }
+}

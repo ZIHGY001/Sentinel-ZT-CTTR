@@ -1,0 +1,8 @@
+{
+  "networks": [
+    "192.0.2.0/24"
+  ],
+  "domains": [
+    "example.test"
+  ]
+}

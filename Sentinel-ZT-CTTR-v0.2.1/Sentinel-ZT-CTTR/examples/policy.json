@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "min_intel_confidence": 60,
+  "response_threshold": 75,
+  "analysis_window_seconds": 86400,
+  "max_evidence_age_seconds": 900,
+  "block_ttl_seconds": 300,
+  "plan_ttl_seconds": 600,
+  "posture_max_age_seconds": 300,
+  "protected_networks": [
+    "127.0.0.0/8",
+    "::1/128",
+    "192.0.2.254/32"
+  ],
+  "operators": [
+    "lab-analyst"
+  ],
+  "suppressions": [],
+  "assets": {
+    "workstation-demo": {
+      "ips": [
+        "192.0.2.10"
+      ],
+      "response_enabled": true,
+      "criticality": "normal",
+      "local_hostname": "CONFIGURE-YOUR-HOSTNAME",
+      "permissions": {
+        "analyst-demo": [
+          "read"
+        ]
+      }
+    },
+    "web-demo": {
+      "ips": [
+        "192.0.2.11"
+      ],
+      "response_enabled": true,
+      "criticality": "normal",
+      "local_hostname": "CONFIGURE-YOUR-HOSTNAME",
+      "permissions": {
+        "analyst-demo": [
+          "read"
+        ]
+      }
+    },
+    "agent-demo": {
+      "ips": [
+        "192.0.2.12"
+      ],
+      "response_enabled": true,
+      "criticality": "normal",
+      "local_hostname": "CONFIGURE-YOUR-HOSTNAME",
+      "permissions": {
+        "analyst-demo": [
+          "read"
+        ]
+      }
+    },
+    "clean-demo": {
+      "ips": [
+        "192.0.2.13"
+      ],
+      "response_enabled": true,
+      "criticality": "normal",
+      "local_hostname": "CONFIGURE-YOUR-HOSTNAME",
+      "permissions": {
+        "analyst-demo": [
+          "read"
+        ]
+      }
+    }
+  }
+}

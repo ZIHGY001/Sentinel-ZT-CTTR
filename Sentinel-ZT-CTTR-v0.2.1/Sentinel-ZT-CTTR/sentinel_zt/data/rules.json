@@ -1,0 +1,701 @@
+[
+  {
+    "id": "B001",
+    "title": "Office / 文档阅读器启动脚本解释器",
+    "score": 55,
+    "stage": "execution",
+    "attack": [
+      "T1204.002",
+      "T1059"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "process_start"
+        },
+        {
+          "field": "parent_process_name",
+          "op": "in",
+          "value": [
+            "winword.exe",
+            "excel.exe",
+            "powerpnt.exe",
+            "outlook.exe",
+            "acrord32.exe"
+          ]
+        },
+        {
+          "field": "process_name",
+          "op": "in",
+          "value": [
+            "powershell.exe",
+            "pwsh.exe",
+            "cmd.exe",
+            "wscript.exe",
+            "cscript.exe",
+            "mshta.exe",
+            "bash",
+            "sh",
+            "dash",
+            "python",
+            "python3"
+          ]
+        }
+      ]
+    },
+    "rationale": "文档进程与脚本解释器的父子关系构成执行线索。",
+    "false_positives": "经批准的宏、报表导出和运维插件。",
+    "status": "experimental"
+  },
+  {
+    "id": "B002",
+    "title": "Web / 数据库服务启动命令解释器",
+    "score": 65,
+    "stage": "execution",
+    "attack": [
+      "T1059"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "process_start"
+        },
+        {
+          "field": "parent_process_name",
+          "op": "in",
+          "value": [
+            "java",
+            "java.exe",
+            "tomcat",
+            "w3wp.exe",
+            "nginx",
+            "httpd",
+            "apache2",
+            "db2sysc",
+            "db2fmp",
+            "mysqld",
+            "redis-server"
+          ]
+        },
+        {
+          "field": "process_name",
+          "op": "in",
+          "value": [
+            "powershell.exe",
+            "pwsh.exe",
+            "cmd.exe",
+            "wscript.exe",
+            "cscript.exe",
+            "mshta.exe",
+            "bash",
+            "sh",
+            "dash",
+            "python",
+            "python3"
+          ]
+        }
+      ]
+    },
+    "rationale": "服务进程产生交互式或脚本子进程，需关联请求及变更记录。",
+    "false_positives": "应用合法调用外部工具、备份任务。",
+    "status": "experimental"
+  },
+  {
+    "id": "B003",
+    "title": "未验证的 Agent Skill 安装或修改",
+    "score": 55,
+    "stage": "persistence",
+    "attack": [
+      "T1546"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "agent"
+        },
+        {
+          "field": "action",
+          "op": "in",
+          "value": [
+            "skill_install",
+            "skill_modify"
+          ]
+        },
+        {
+          "field": "verified",
+          "op": "eq",
+          "value": false
+        }
+      ]
+    },
+    "rationale": "未验证扩展可能改变 Agent 执行能力。",
+    "false_positives": "研发调试或尚未纳入签名体系的扩展。",
+    "status": "experimental"
+  },
+  {
+    "id": "B004",
+    "title": "Agent 未授权高权限工具调用",
+    "score": 65,
+    "stage": "execution",
+    "attack": [
+      "T1059"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "agent"
+        },
+        {
+          "field": "tool",
+          "op": "in",
+          "value": [
+            "shell",
+            "exec",
+            "read_secret",
+            "network_admin"
+          ]
+        },
+        {
+          "field": "authorized",
+          "op": "eq",
+          "value": false
+        }
+      ]
+    },
+    "rationale": "必须由可信工具网关提供授权判定；提示词文本本身不作为执行证据。",
+    "false_positives": "接入器字段映射错误。",
+    "status": "experimental"
+  },
+  {
+    "id": "B005",
+    "title": "异常读取密钥或工作负载令牌",
+    "score": 60,
+    "stage": "credential_access",
+    "attack": [
+      "T1552.001"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "file_read"
+        },
+        {
+          "field": "authorized",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "file_path",
+          "op": "contains_any",
+          "value": [
+            "/.ssh/",
+            "/secrets/",
+            "/serviceaccount/token",
+            "/.aws/credentials"
+          ]
+        }
+      ]
+    },
+    "rationale": "明确的未授权读取与敏感文件路径同时出现。",
+    "false_positives": "被错误标记的备份或安全审计。",
+    "status": "experimental"
+  },
+  {
+    "id": "B006",
+    "title": "管理接口未认证且返回成功状态",
+    "score": 55,
+    "stage": "initial_access",
+    "attack": [
+      "T1190"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "http"
+        },
+        {
+          "field": "authenticated",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "status",
+          "op": "in",
+          "value": [
+            200,
+            201,
+            204
+          ]
+        },
+        {
+          "any": [
+            {
+              "field": "path_normalized",
+              "op": "contains_any",
+              "value": [
+                "/kubepi/api/v1/sso"
+              ]
+            },
+            {
+              "all": [
+                {
+                  "field": "product",
+                  "op": "eq",
+                  "value": "nacos"
+                },
+                {
+                  "field": "path_normalized",
+                  "op": "contains_any",
+                  "value": [
+                    "/auth/",
+                    "/users",
+                    "/roles",
+                    "/permissions"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "rationale": "HTTP成功不证明越权成功；还需要业务审计或响应内容核验。",
+    "false_positives": "公开状态接口、返回200的登录页、错误的认证字段。",
+    "status": "experimental"
+  },
+  {
+    "id": "B007",
+    "title": "未授权身份创建或权限修改",
+    "score": 70,
+    "stage": "privilege_escalation",
+    "attack": [
+      "T1098"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "identity"
+        },
+        {
+          "field": "authorized",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "action",
+          "op": "in",
+          "value": [
+            "account_create",
+            "role_grant",
+            "permission_grant",
+            "sso_update"
+          ]
+        }
+      ]
+    },
+    "rationale": "由身份系统的可信审计提供授权结果。",
+    "false_positives": "角色同步、应急变更尚未同步审批记录。",
+    "status": "experimental"
+  },
+  {
+    "id": "B008",
+    "title": "Jeecg 字典接口出现 SQL 语法线索",
+    "score": 45,
+    "stage": "initial_access",
+    "attack": [
+      "T1190"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "http"
+        },
+        {
+          "field": "path_normalized",
+          "op": "contains_any",
+          "value": [
+            "/sys/dict/getdictitems/"
+          ]
+        },
+        {
+          "field": "query_normalized",
+          "op": "contains_any",
+          "value": [
+            "filtersql"
+          ]
+        },
+        {
+          "field": "query_normalized",
+          "op": "contains_any",
+          "value": [
+            "select ",
+            "union ",
+            "sleep(",
+            "benchmark(",
+            " or ",
+            " and "
+          ]
+        }
+      ]
+    },
+    "rationale": "参数中出现SQL语法只能证明可疑请求，不能证明注入成立。",
+    "false_positives": "合法过滤查询、自测请求。",
+    "status": "experimental"
+  },
+  {
+    "id": "B009",
+    "title": "下载接口出现路径遍历特征",
+    "score": 45,
+    "stage": "initial_access",
+    "attack": [
+      "T1190"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "http"
+        },
+        {
+          "field": "path_normalized",
+          "op": "contains_any",
+          "value": [
+            "/pan/public/download",
+            "/download"
+          ]
+        },
+        {
+          "any": [
+            {
+              "field": "path_normalized",
+              "op": "contains_any",
+              "value": [
+                "../",
+                "..\\"
+              ]
+            },
+            {
+              "field": "query_normalized",
+              "op": "contains_any",
+              "value": [
+                "../",
+                "..\\"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "rationale": "解码后的相对路径上跳与下载端点相关联。",
+    "false_positives": "合法但设计不佳的相对路径下载。",
+    "status": "experimental"
+  },
+  {
+    "id": "B010",
+    "title": "业务上传接口接收脚本扩展名",
+    "score": 50,
+    "stage": "initial_access",
+    "attack": [
+      "T1190",
+      "T1505.003"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "http"
+        },
+        {
+          "field": "method",
+          "op": "eq",
+          "value": "POST"
+        },
+        {
+          "field": "path_normalized",
+          "op": "contains_any",
+          "value": [
+            "/entsoft/entslt/tradedocaction.entweb",
+            "/upload"
+          ]
+        },
+        {
+          "field": "uploaded_filename",
+          "op": "endswith_any",
+          "value": [
+            ".jsp",
+            ".jspx",
+            ".php",
+            ".aspx",
+            ".ashx",
+            ".war"
+          ]
+        }
+      ]
+    },
+    "rationale": "需由WAF/应用审计提供上传文件名，再核验落地和执行。",
+    "false_positives": "合法部署、开发环境上传。",
+    "status": "experimental"
+  },
+  {
+    "id": "B011",
+    "title": "未批准的持久化配置变更",
+    "score": 60,
+    "stage": "persistence",
+    "attack": [
+      "T1053",
+      "T1547"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "persistence"
+        },
+        {
+          "field": "approved",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "action",
+          "op": "in",
+          "value": [
+            "scheduled_task",
+            "service_create",
+            "cron_change",
+            "run_key"
+          ]
+        }
+      ]
+    },
+    "rationale": "计划任务、服务或启动项变更超出批准基线。",
+    "false_positives": "资产变更清单不完整。",
+    "status": "experimental"
+  },
+  {
+    "id": "B012",
+    "title": "文件名包含 Unicode 方向控制字符",
+    "score": 40,
+    "stage": "defense_evasion",
+    "attack": [
+      "T1036.002"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "in",
+          "value": [
+            "file_write",
+            "process_start"
+          ]
+        },
+        {
+          "field": "file_path",
+          "op": "contains_any",
+          "value": [
+            "‮",
+            "‭",
+            "⁦",
+            "⁧",
+            "⁨"
+          ]
+        }
+      ]
+    },
+    "rationale": "方向控制字符可能掩盖真实文件扩展名。",
+    "false_positives": "国际化文档可能合法包含这些字符。",
+    "status": "experimental"
+  },
+  {
+    "id": "B013",
+    "title": "非授权访问云实例元数据地址",
+    "score": 50,
+    "stage": "credential_access",
+    "attack": [
+      "T1552.005"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "network"
+        },
+        {
+          "field": "dst_ip",
+          "op": "eq",
+          "value": "169.254.169.254"
+        },
+        {
+          "field": "authorized",
+          "op": "eq",
+          "value": false
+        }
+      ]
+    },
+    "rationale": "需要工作负载基线区分合法云SDK与异常元数据访问。",
+    "false_positives": "云SDK、实例初始化。",
+    "status": "experimental"
+  },
+  {
+    "id": "B014",
+    "title": "Web 根目录出现服务端脚本写入",
+    "score": 60,
+    "stage": "persistence",
+    "attack": [
+      "T1505.003"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "file_write"
+        },
+        {
+          "field": "webroot",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "field": "approved",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "file_path",
+          "op": "endswith_any",
+          "value": [
+            ".jsp",
+            ".jspx",
+            ".php",
+            ".aspx",
+            ".ashx"
+          ]
+        }
+      ]
+    },
+    "rationale": "未批准的Web根目录脚本写入，需进一步核验内容。",
+    "false_positives": "部署流水线审批映射遗漏。",
+    "status": "experimental"
+  },
+  {
+    "id": "B015",
+    "title": "未批准的 JDBC 连接目标变更",
+    "score": 45,
+    "stage": "initial_access",
+    "attack": [
+      "T1190"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "configuration"
+        },
+        {
+          "field": "action",
+          "op": "eq",
+          "value": "jdbc_url_change"
+        },
+        {
+          "field": "approved",
+          "op": "eq",
+          "value": false
+        }
+      ]
+    },
+    "rationale": "不可信连接配置具有风险；不通过版本号推断Db2漏洞已利用。",
+    "false_positives": "正常数据源变更。",
+    "status": "experimental"
+  },
+  {
+    "id": "B016",
+    "title": "非授权内网远程管理连接",
+    "score": 50,
+    "stage": "lateral_movement",
+    "attack": [
+      "T1021"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "network"
+        },
+        {
+          "field": "authorized",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "dst_port",
+          "op": "in",
+          "value": [
+            22,
+            445,
+            3389,
+            5985,
+            5986,
+            6443,
+            6379
+          ]
+        }
+      ]
+    },
+    "rationale": "远程管理或基础服务连接超出工作负载授权范围。",
+    "false_positives": "合法运维授权未接入。",
+    "status": "experimental"
+  },
+  {
+    "id": "B017",
+    "title": "注册表启动项写入",
+    "score": 45,
+    "stage": "persistence",
+    "attack": [
+      "T1547.001"
+    ],
+    "condition": {
+      "all": [
+        {
+          "field": "event_type",
+          "op": "eq",
+          "value": "registry"
+        },
+        {
+          "field": "registry_path",
+          "op": "contains_any",
+          "value": [
+            "\\currentversion\\run\\",
+            "\\currentversion\\runonce\\"
+          ]
+        }
+      ]
+    },
+    "rationale": "启动项写入是持久化线索，需结合签名和变更记录。",
+    "false_positives": "合法软件安装与更新。",
+    "status": "experimental"
+  }
+]
