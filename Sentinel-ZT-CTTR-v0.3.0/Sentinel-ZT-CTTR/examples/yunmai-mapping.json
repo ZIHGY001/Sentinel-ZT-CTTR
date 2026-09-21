@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "tenant_ref": "tenant-example-only",
+  "mapping_max_age_seconds": 3600,
+  "evidence_max_age_seconds": 900,
+  "review_ttl_seconds": 600,
+  "restriction_ttl_seconds": 900,
+  "protected_application_refs": ["app-sentinel-console", "app-forensics"],
+  "bindings": [
+    {
+      "host": "workstation-demo",
+      "subject": {"type": "user", "ref": "user-demo"},
+      "application_refs": ["app-demo-business"],
+      "verified_by": "analyst-demo",
+      "verified_at": "2026-09-20T12:00:00Z"
+    }
+  ]
+}

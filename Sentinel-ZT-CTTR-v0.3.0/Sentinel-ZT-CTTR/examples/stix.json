@@ -1,0 +1,21 @@
+{
+  "type": "bundle",
+  "id": "bundle--98cd323b-caf4-4f10-ad7c-2988c1de85aa",
+  "objects": [
+    {
+      "type": "indicator",
+      "spec_version": "2.1",
+      "id": "indicator--1f2e1388-ad6d-4faf-88e5-b5957d8a3ffa",
+      "created": "2026-09-19T12:00:00Z",
+      "modified": "2026-09-19T12:00:00Z",
+      "pattern_type": "stix",
+      "pattern": "[ipv4-addr:value = '203.0.113.50']",
+      "valid_from": "2026-09-19T12:00:00Z",
+      "valid_until": "2026-09-21T12:00:00Z",
+      "confidence": 90,
+      "labels": [
+        "synthetic"
+      ]
+    }
+  ]
+}
