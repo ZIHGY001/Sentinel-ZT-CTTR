@@ -1,0 +1,11 @@
+{
+  "subject": "analyst-demo",
+  "resource": "clean-demo",
+  "action": "read",
+  "identity_verified": true,
+  "mfa_verified": true,
+  "device_managed": true,
+  "device_compliant": true,
+  "token_valid": true,
+  "posture_checked_at": "2026-09-20T12:00:00Z"
+}

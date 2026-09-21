@@ -1,0 +1,27 @@
+[Unit]
+Description=Sentinel-ZT-CTTR behind Yunmai SASE
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sentinel
+Group=sentinel
+WorkingDirectory=/opt/sentinel-zt-cttr
+EnvironmentFile=/etc/sentinel-zt-cttr/server.env
+ExecStart=/opt/sentinel-zt-cttr/.venv/bin/python /opt/sentinel-zt-cttr/scripts/serve.py --no-print-token
+Restart=on-failure
+RestartSec=5
+UMask=0077
+StateDirectory=sentinel-zt-cttr
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/sentinel-zt-cttr
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
