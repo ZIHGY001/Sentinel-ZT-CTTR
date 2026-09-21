@@ -1,0 +1,40 @@
+{
+  "indicators": [
+    {
+      "type": "ip",
+      "value": "203.0.113.50",
+      "source": "synthetic-training-feed",
+      "confidence": 90,
+      "valid_from": "2026-09-19T12:00:00Z",
+      "valid_until": "2026-09-21T12:00:00Z",
+      "tags": [
+        "synthetic"
+      ],
+      "tlp": "CLEAR"
+    },
+    {
+      "type": "ip",
+      "value": "203.0.113.51",
+      "source": "synthetic-training-feed",
+      "confidence": 90,
+      "valid_from": "2026-09-19T12:00:00Z",
+      "valid_until": "2026-09-21T12:00:00Z",
+      "tags": [
+        "synthetic"
+      ],
+      "tlp": "CLEAR"
+    },
+    {
+      "type": "domain",
+      "value": "updates.example.test",
+      "source": "synthetic-training-feed",
+      "confidence": 90,
+      "valid_from": "2026-09-19T12:00:00Z",
+      "valid_until": "2026-09-21T12:00:00Z",
+      "tags": [
+        "synthetic"
+      ],
+      "tlp": "CLEAR"
+    }
+  ]
+}
