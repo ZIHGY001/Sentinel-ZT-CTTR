@@ -1,0 +1,848 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Sentinel-ZT-CTTR · 应急研判报告</title><style>
+:root{--bg:#f3f5f7;--ink:#152536;--muted:#657585;--line:#dde4ea;--accent:#087f8c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+header{background:#102b3a;color:#f6fbff;padding:44px max(28px,calc((100vw - 1160px)/2));border-bottom:5px solid #40c5bd}
+.eyebrow{font-size:12px;letter-spacing:3px;color:#79d9d3;font-weight:700}h1{font-size:34px;line-height:1.3;margin:12px 0}header p{color:#c3d4dc;max-width:820px;margin:12px 0 0}
+main{max-width:1216px;padding:30px 28px 56px;margin:auto}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.metric{background:white;border:1px solid var(--line);border-radius:12px;padding:18px 22px}.metric strong{display:block;font-size:30px;line-height:1.4}.metric span{color:var(--muted);font-size:13px}
+.section-title{display:flex;justify-content:space-between;align-items:baseline;margin-top:34px}h2{font-size:21px;margin:0 0 16px}h3{font-size:17px;margin:0}h4{margin-bottom:8px}.muted{color:var(--muted);font-size:13px}.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px}.case{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}.case-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.tag{padding:3px 8px;border-radius:5px;font-size:10px;font-weight:750;letter-spacing:1px;background:#eaf0f3}.critical{background:#ffebe9;color:#b02d27}.high{background:#fff0d9;color:#925a00}.medium{background:#dff2f3;color:#08656c}.risk{font-size:40px;font-weight:750;margin:14px 0 5px}.risk small{font-size:15px;color:var(--muted);font-weight:400}.track{height:5px;background:#e8edf1;border-radius:3px}.track i{height:100%;display:block;background:var(--accent);border-radius:3px}.case p{margin:12px 0 0;font-size:12px;overflow-wrap:anywhere}
+.finding{margin-bottom:9px;background:#fff;border:1px solid var(--line);border-radius:8px}.finding summary{cursor:pointer;display:flex;gap:16px;align-items:center;padding:16px}.finding summary::before{content:'+';color:var(--accent);font-weight:bold}.finding[open] summary::before{content:'−'}.finding strong{flex:1;font-weight:600}.finding-host{font-size:12px;color:var(--muted)}.code{font:12px monospace;color:var(--accent);background:#e9f5f4;padding:3px 7px;border-radius:4px}.detail{padding:0 22px 20px;border-top:1px solid var(--line)}pre{font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7f9;padding:14px;border-radius:6px;max-height:400px;overflow:auto}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:white}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;vertical-align:top;padding:14px;border-bottom:1px solid var(--line)}th{background:#eaf0f3;color:#456071;font-size:12px}td small{display:block;color:#a05c19;overflow-wrap:anywhere}td:nth-child(3){min-width:280px}.note{padding:17px 20px;background:#e5f2f3;border-left:3px solid var(--accent);margin:24px 0;font-size:13px}footer{font-size:12px;color:var(--muted);margin-top:30px;overflow-wrap:anywhere}
+@media(max-width:650px){header{padding:28px 20px}h1{font-size:26px}main{padding:20px 16px}.metrics{grid-template-columns:repeat(2,1fr)}.finding summary{gap:8px;flex-wrap:wrap}.finding-host{display:none}.section-title{display:block}.metric{padding:14px}}
+@media print{header{background:white;color:#152536;padding:15px 0}header p,.eyebrow{color:#456071}main{padding:12px 0}.finding{break-inside:avoid}.case{break-inside:avoid}.note{background:white}}
+</style></head><body><header><div class="eyebrow">SENTINEL-ZT-CTTR / INCIDENT RESPONSE</div>
+<h1>从行为证据，到有边界的响应。</h1><p>关联威胁情报、端点行为与访问上下文。每个结论都能追溯证据，每次处置都受授权、时效与资产范围约束。</p></header><main><div class="metrics"><div class="metric"><strong>11</strong><span>已分析事件</span></div><div class="metric"><strong>7</strong><span>检测线索</span></div><div class="metric"><strong>1</strong><span>高风险资产</span></div><div class="metric"><strong>0</strong><span>可授权的处置计划</span></div></div><div class="section-title"><h2>资产研判</h2><span class="muted">风险分数为启发式排序，不是失陷概率</span></div><div class="cases"><article class="case"><div class="case-head"><h3>workstation-demo</h3>
+          <span class="tag critical">CRITICAL</span></div>
+          <div class="risk">93<small> / 99</small></div>
+          <div class="track"><i style="width:93%"></i></div>
+          <p>B101 · B102 · B103 · B104 · C101</p><p class="muted">5 条关联证据 · 待分析员核验</p></article></div><div class="section-title"><h2>资产角色与基线覆盖</h2><span class="muted">无需 IOC；覆盖缺口不能解释为安全</span></div><pre>{
+  &quot;assets&quot;: [
+    {
+      &quot;host&quot;: &quot;bastion-demo&quot;,
+      &quot;registered&quot;: true,
+      &quot;profile&quot;: &quot;bastion&quot;,
+      &quot;role&quot;: &quot;bastion&quot;,
+      &quot;criticality&quot;: &quot;normal&quot;,
+      &quot;status&quot;: &quot;active&quot;,
+      &quot;evaluated_events&quot;: 3,
+      &quot;expected_events&quot;: 3,
+      &quot;exception_events&quot;: 0,
+      &quot;deviations&quot;: 0,
+      &quot;gaps&quot;: [
+        &quot;identity_telemetry_absent&quot;,
+        &quot;privilege_telemetry_absent&quot;
+      ],
+      &quot;observed_types&quot;: [
+        &quot;network&quot;
+      ],
+      &quot;revision&quot;: &quot;review-1&quot;,
+      &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;
+    },
+    {
+      &quot;host&quot;: &quot;workstation-demo&quot;,
+      &quot;registered&quot;: true,
+      &quot;profile&quot;: &quot;workstation&quot;,
+      &quot;role&quot;: &quot;workstation&quot;,
+      &quot;criticality&quot;: &quot;normal&quot;,
+      &quot;status&quot;: &quot;active&quot;,
+      &quot;evaluated_events&quot;: 8,
+      &quot;expected_events&quot;: 3,
+      &quot;exception_events&quot;: 0,
+      &quot;deviations&quot;: 7,
+      &quot;gaps&quot;: [],
+      &quot;observed_types&quot;: [
+        &quot;identity&quot;,
+        &quot;network&quot;,
+        &quot;privilege&quot;
+      ],
+      &quot;revision&quot;: &quot;review-1&quot;,
+      &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;
+    }
+  ],
+  &quot;exceptions_applied&quot;: []
+}</pre><div class="section-title"><h2>行为与情报证据</h2><span class="muted">展开查看规则解释、误报场景和原始字段</span></div><details class="finding"><summary><span class="code">B103</span>
+          <strong>授权变更偏离已审核身份基线</strong><span class="finding-host">workstation-demo</span>
+          <b>75</b></summary><div class="detail"><p>成功的角色、权限或组变更不匹配已审核的操作者、动作、目标账户与权限组合。</p>
+          <p class="muted">误报场景：正常入离职或权限调整；核验身份审计、审批单与实际变更。</p>
+          <p>ATT&amp;CK：T1098 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;role_grant&quot;,
+    &quot;actor&quot;: &quot;helpdesk-demo&quot;,
+    &quot;event_type&quot;: &quot;identity&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;outcome&quot;: &quot;success&quot;,
+    &quot;target_role&quot;: &quot;DomainAdmin&quot;,
+    &quot;target_user&quot;: &quot;alice-demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:34:30.999006Z&quot;,
+    &quot;id&quot;: &quot;evt-e8a55fd732da9731f4205b2e&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 1,
+      &quot;raw_sha256&quot;: &quot;e8a55fd732da9731f4205b2e148f11a27fb989a790a575ec3b4af5456bc89491&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;identity_change_not_expected&quot;,
+  &quot;observed&quot;: {
+    &quot;target_role&quot;: &quot;DomainAdmin&quot;,
+    &quot;target_user&quot;: &quot;alice-demo&quot;,
+    &quot;actor&quot;: &quot;helpdesk-demo&quot;,
+    &quot;action&quot;: &quot;role_grant&quot;
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><details class="finding"><summary><span class="code">B104</span>
+          <strong>权限提升偏离资产角色基线</strong><span class="finding-host">workstation-demo</span>
+          <b>75</b></summary><div class="detail"><p>成功的权限提升不匹配已审核的用户、目标身份与程序路径；需核验具体提权机制。</p>
+          <p class="muted">误报场景：获批 sudo、运维代理或安装程序；核验操作主体与变更时间。</p>
+          <p>ATT&amp;CK：T1548 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;elevate&quot;,
+    &quot;event_type&quot;: &quot;privilege&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;outcome&quot;: &quot;success&quot;,
+    &quot;process&quot;: &quot;/usr/bin/sudo&quot;,
+    &quot;target_user&quot;: &quot;root&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:00.999006Z&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;process_name&quot;: &quot;sudo&quot;,
+    &quot;id&quot;: &quot;evt-b1cbcb687bf4711c2f8835b1&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 2,
+      &quot;raw_sha256&quot;: &quot;2f078a780ca860c59105a52559209e6d9c68e3010c938473af1203fff4813904&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;privilege_transition_not_expected&quot;,
+  &quot;observed&quot;: {
+    &quot;target_user&quot;: &quot;root&quot;,
+    &quot;action&quot;: &quot;elevate&quot;,
+    &quot;process&quot;: &quot;/usr/bin/sudo&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><details class="finding"><summary><span class="code">B101</span>
+          <strong>远程服务访问偏离资产角色基线</strong><span class="finding-host">workstation-demo</span>
+          <b>55</b></summary><div class="detail"><p>已注册源资产访问内部远程服务，目标、端口或协议组合不在已审核基线中；连接观察不证明登录成功。</p>
+          <p class="muted">误报场景：临时运维、发布或灾备切换；核对跳板路径与变更工单。</p>
+          <p>ATT&amp;CK：T1021 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.20&quot;,
+    &quot;dst_port&quot;: 445,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:30.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-4a10dd8486014a12ecc99288&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 3,
+      &quot;raw_sha256&quot;: &quot;4a10dd8486014a12ecc99288401ac81ddd269b4f0824d777ee751d20f56b8d50&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;remote_flow_not_expected&quot;,
+  &quot;observed&quot;: {
+    &quot;dst_ip&quot;: &quot;192.0.2.20&quot;,
+    &quot;dst_port&quot;: 445,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><details class="finding"><summary><span class="code">B101</span>
+          <strong>远程服务访问偏离资产角色基线</strong><span class="finding-host">workstation-demo</span>
+          <b>55</b></summary><div class="detail"><p>已注册源资产访问内部远程服务，目标、端口或协议组合不在已审核基线中；连接观察不证明登录成功。</p>
+          <p class="muted">误报场景：临时运维、发布或灾备切换；核对跳板路径与变更工单。</p>
+          <p>ATT&amp;CK：T1021 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.21&quot;,
+    &quot;dst_port&quot;: 3389,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:40.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-53967228f50c03ac650be650&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 5,
+      &quot;raw_sha256&quot;: &quot;53967228f50c03ac650be650fb6cc94764104fb2ca3e3936c38eb255326f5a92&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;remote_flow_not_expected&quot;,
+  &quot;observed&quot;: {
+    &quot;dst_ip&quot;: &quot;192.0.2.21&quot;,
+    &quot;dst_port&quot;: 3389,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><details class="finding"><summary><span class="code">B101</span>
+          <strong>远程服务访问偏离资产角色基线</strong><span class="finding-host">workstation-demo</span>
+          <b>55</b></summary><div class="detail"><p>已注册源资产访问内部远程服务，目标、端口或协议组合不在已审核基线中；连接观察不证明登录成功。</p>
+          <p class="muted">误报场景：临时运维、发布或灾备切换；核对跳板路径与变更工单。</p>
+          <p>ATT&amp;CK：T1021 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.22&quot;,
+    &quot;dst_port&quot;: 5985,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:50.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-f08ff19d140e34df8e525af5&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 7,
+      &quot;raw_sha256&quot;: &quot;f08ff19d140e34df8e525af55117ae2a7060ef5a7e27dd3a261ec176174b3eb6&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;remote_flow_not_expected&quot;,
+  &quot;observed&quot;: {
+    &quot;dst_ip&quot;: &quot;192.0.2.22&quot;,
+    &quot;dst_port&quot;: 5985,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><details class="finding"><summary><span class="code">B102</span>
+          <strong>短时间访问多个基线外远程服务目标</strong><span class="finding-host">workstation-demo</span>
+          <b>75</b></summary><div class="detail"><p>滑动时间窗口内，基线外远程服务连接达到不同目标数门槛；是横向活动假设，不证明成功入侵。</p>
+          <p class="muted">误报场景：资产运维、巡检和批量发布；仅对已核验的精确路径建立例外。</p>
+          <p>ATT&amp;CK：T1021 · suspicious_observation</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.20&quot;,
+    &quot;dst_port&quot;: 445,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:30.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-4a10dd8486014a12ecc99288&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 3,
+      &quot;raw_sha256&quot;: &quot;4a10dd8486014a12ecc99288401ac81ddd269b4f0824d777ee751d20f56b8d50&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.21&quot;,
+    &quot;dst_port&quot;: 3389,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:40.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-53967228f50c03ac650be650&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 5,
+      &quot;raw_sha256&quot;: &quot;53967228f50c03ac650be650fb6cc94764104fb2ca3e3936c38eb255326f5a92&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.22&quot;,
+    &quot;dst_port&quot;: 5985,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:50.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-f08ff19d140e34df8e525af5&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 7,
+      &quot;raw_sha256&quot;: &quot;f08ff19d140e34df8e525af55117ae2a7060ef5a7e27dd3a261ec176174b3eb6&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;remote_fanout_threshold_exceeded&quot;,
+  &quot;observed&quot;: {
+    &quot;unique_targets&quot;: 3,
+    &quot;window_seconds&quot;: 300,
+    &quot;threshold&quot;: 3
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><details class="finding"><summary><span class="code">C101</span>
+          <strong>异常权限变化后出现横向访问偏离</strong><span class="finding-host">workstation-demo</span>
+          <b>85</b></summary><div class="detail"><p>同资产、同一活动账户的权限变化之后，15 分钟内出现基线外远程服务访问；须进一步核验会话与因果关系。</p>
+          <p class="muted">误报场景：审批后的管理员工作流；同名用户不足以证明同一真实身份。</p>
+          <p>ATT&amp;CK：T1098, T1548, T1021 · correlated_hypothesis</p>
+          <h4>证据与来源</h4><pre>[
+  {
+    &quot;action&quot;: &quot;elevate&quot;,
+    &quot;event_type&quot;: &quot;privilege&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;outcome&quot;: &quot;success&quot;,
+    &quot;process&quot;: &quot;/usr/bin/sudo&quot;,
+    &quot;target_user&quot;: &quot;root&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:00.999006Z&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;process_name&quot;: &quot;sudo&quot;,
+    &quot;id&quot;: &quot;evt-b1cbcb687bf4711c2f8835b1&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 2,
+      &quot;raw_sha256&quot;: &quot;2f078a780ca860c59105a52559209e6d9c68e3010c938473af1203fff4813904&quot;
+    }
+  },
+  {
+    &quot;dst_ip&quot;: &quot;192.0.2.20&quot;,
+    &quot;dst_port&quot;: 445,
+    &quot;event_type&quot;: &quot;network&quot;,
+    &quot;host&quot;: &quot;workstation-demo&quot;,
+    &quot;src_ip&quot;: &quot;192.0.2.10&quot;,
+    &quot;timestamp&quot;: &quot;2026-09-22T06:35:30.999006Z&quot;,
+    &quot;transport&quot;: &quot;tcp&quot;,
+    &quot;user&quot;: &quot;alice-demo&quot;,
+    &quot;id&quot;: &quot;evt-4a10dd8486014a12ecc99288&quot;,
+    &quot;evidence&quot;: {
+      &quot;source&quot;: &quot;events.jsonl&quot;,
+      &quot;line&quot;: 3,
+      &quot;raw_sha256&quot;: &quot;4a10dd8486014a12ecc99288401ac81ddd269b4f0824d777ee751d20f56b8d50&quot;
+    }
+  }
+]</pre>
+          <h4>情报匹配</h4><pre>[]</pre><h4>行为基线偏离</h4><pre>{
+  &quot;profile&quot;: &quot;workstation&quot;,
+  &quot;revision&quot;: &quot;review-1&quot;,
+  &quot;valid_until&quot;: &quot;2026-09-29T06:39:20.999006Z&quot;,
+  &quot;reason&quot;: &quot;privilege_then_lateral_same_account&quot;,
+  &quot;observed&quot;: {
+    &quot;account_join&quot;: &quot;exact&quot;,
+    &quot;window_seconds&quot;: 900
+  },
+  &quot;ioc_required&quot;: false
+}</pre></div></details><div class="section-title"><h2>响应计划</h2><span class="muted">此报告没有执行任何处置</span></div><div class="table-wrap"><table><thead><tr><th>资产</th><th>动作</th><th>范围 / 下一步</th><th>状态</th></tr></thead><tbody><tr><td>workstation-demo</td><td>manual_investigation</td><td>保存原始日志与文件哈希，核验时间和资产归属；核对变更、进程GUID、会话与业务影响；核验资产角色、基线版本和临时例外；缺少 IOC 不作为忽略行为告警的理由；按已核验用户和应用生成云脉待审核交接单；限制最小访问范围并保留管理通道；关联源端进程与目标登录日志，核验跨主机账户和会话；复核跳板访问路径；在身份平台撤销受影响会话并轮换相关密钥；核验异常授权<small></small></td><td>人工处理</td></tr></tbody></table></div><div class="section-title"><h2>调查手册与复核记录</h2><span class="muted">检查进度不等于安全证明；不会修改处置权限</span></div><p>workstation-demo：调查范围、证据与恢复；横向访问与路径偏离；异常授权与凭据访问</p><details class="finding"><summary>workstation-demo · 复核版次 0 · 待补证 14</summary><div class="detail"><pre>{
+  &quot;schema_version&quot;: 1,
+  &quot;catalog_version&quot;: &quot;2026.09.22.1&quot;,
+  &quot;catalog_digest&quot;: &quot;a0d6a72155b7109c7c55c9839d29ac9ebe7269bb0822cd9ddff9bebfffad6417&quot;,
+  &quot;incident_id&quot;: &quot;case-5b94c7a6462c5a105596&quot;,
+  &quot;host&quot;: &quot;workstation-demo&quot;,
+  &quot;platform&quot;: &quot;linux&quot;,
+  &quot;platform_origin&quot;: &quot;analyst_declared&quot;,
+  &quot;created_at&quot;: &quot;2026-09-22T06:41:07.463440Z&quot;,
+  &quot;revision&quot;: 0,
+  &quot;analysis_generated_at&quot;: &quot;2026-09-22T06:39:20.999006Z&quot;,
+  &quot;policy_digest&quot;: &quot;48ea8fe8eef9f472b3d128f390d80618287d7ef477930850a4be1b8bb670c372&quot;,
+  &quot;asset_profile&quot;: {
+    &quot;registered&quot;: true,
+    &quot;role&quot;: &quot;workstation&quot;,
+    &quot;criticality&quot;: &quot;normal&quot;,
+    &quot;baseline_profile&quot;: &quot;workstation&quot;
+  },
+  &quot;rule_ids&quot;: [
+    &quot;B101&quot;,
+    &quot;B102&quot;,
+    &quot;B103&quot;,
+    &quot;B104&quot;,
+    &quot;C101&quot;
+  ],
+  &quot;available_evidence&quot;: [
+    {
+      &quot;id&quot;: &quot;evt-e8a55fd732da9731f4205b2e&quot;,
+      &quot;timestamp&quot;: &quot;2026-09-22T06:34:30.999006Z&quot;,
+      &quot;event_type&quot;: &quot;identity&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evt-b1cbcb687bf4711c2f8835b1&quot;,
+      &quot;timestamp&quot;: &quot;2026-09-22T06:35:00.999006Z&quot;,
+      &quot;event_type&quot;: &quot;privilege&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evt-4a10dd8486014a12ecc99288&quot;,
+      &quot;timestamp&quot;: &quot;2026-09-22T06:35:30.999006Z&quot;,
+      &quot;event_type&quot;: &quot;network&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evt-53967228f50c03ac650be650&quot;,
+      &quot;timestamp&quot;: &quot;2026-09-22T06:35:40.999006Z&quot;,
+      &quot;event_type&quot;: &quot;network&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evt-f08ff19d140e34df8e525af5&quot;,
+      &quot;timestamp&quot;: &quot;2026-09-22T06:35:50.999006Z&quot;,
+      &quot;event_type&quot;: &quot;network&quot;
+    }
+  ],
+  &quot;sources&quot;: [
+    {
+      &quot;id&quot;: &quot;nop-checks&quot;,
+      &quot;title&quot;: &quot;NOP Team · Linux 应急响应手册 / 常规安全检查&quot;,
+      &quot;url&quot;: &quot;https://book.noptrace.com/linux/12.%E5%B8%B8%E8%A7%84%E5%AE%89%E5%85%A8%E6%A3%80%E6%9F%A5/&quot;,
+      &quot;repository&quot;: &quot;https://github.com/Just-Hack-For-Fun/Linux-INCIDENT-RESPONSE-COOKBOOK&quot;,
+      &quot;repository_revision&quot;: &quot;480a9c88364f6deef97de25d5ad88ae29f94a930&quot;,
+      &quot;license_observed&quot;: &quot;GPL-3.0 (repository)&quot;,
+      &quot;content_revision&quot;: &quot;online page, not commit-pinned&quot;,
+      &quot;accessed_on&quot;: &quot;2026-09-22&quot;,
+      &quot;integration&quot;: &quot;reference_link_only&quot;
+    },
+    {
+      &quot;id&quot;: &quot;notes-linux&quot;,
+      &quot;title&quot;: &quot;Bypass007 · Linux 入侵排查&quot;,
+      &quot;url&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC01%E7%AB%A0%EF%BC%9A%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5%E7%AF%87/%E7%AC%AC2%E7%AF%87%EF%BC%9ALinux%20%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5.md&quot;,
+      &quot;repository&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes&quot;,
+      &quot;repository_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;license_observed&quot;: &quot;no license detected in repository metadata&quot;,
+      &quot;content_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;accessed_on&quot;: &quot;2026-09-22&quot;,
+      &quot;integration&quot;: &quot;reference_link_only&quot;
+    },
+    {
+      &quot;id&quot;: &quot;notes-logs&quot;,
+      &quot;title&quot;: &quot;Bypass007 · Linux 日志分析&quot;,
+      &quot;url&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC02%E7%AB%A0%EF%BC%9A%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%AF%87/%E7%AC%AC2%E7%AF%87%EF%BC%9ALinux%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90.md&quot;,
+      &quot;repository&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes&quot;,
+      &quot;repository_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;license_observed&quot;: &quot;no license detected in repository metadata&quot;,
+      &quot;content_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;accessed_on&quot;: &quot;2026-09-22&quot;,
+      &quot;integration&quot;: &quot;reference_link_only&quot;
+    },
+    {
+      &quot;id&quot;: &quot;notes-ssh&quot;,
+      &quot;title&quot;: &quot;Bypass007 · SSH 暴力破解&quot;,
+      &quot;url&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC05%E7%AB%A0%EF%BC%9ALinux%E5%AE%9E%E6%88%98%E7%AF%87/%E7%AC%AC1%E7%AF%87%EF%BC%9ASSH%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3.md&quot;,
+      &quot;repository&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes&quot;,
+      &quot;repository_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;license_observed&quot;: &quot;no license detected in repository metadata&quot;,
+      &quot;content_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;accessed_on&quot;: &quot;2026-09-22&quot;,
+      &quot;integration&quot;: &quot;reference_link_only&quot;
+    },
+    {
+      &quot;id&quot;: &quot;notes-web&quot;,
+      &quot;title&quot;: &quot;Bypass007 · 网站被植入 Webshell&quot;,
+      &quot;url&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC06%E7%AB%A0%EF%BC%9AWeb%E5%AE%9E%E6%88%98%E7%AF%87/%E7%AC%AC1%E7%AF%87%EF%BC%9A%E7%BD%91%E7%AB%99%E8%A2%AB%E6%A4%8D%E5%85%A5Webshell.md&quot;,
+      &quot;repository&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes&quot;,
+      &quot;repository_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;license_observed&quot;: &quot;no license detected in repository metadata&quot;,
+      &quot;content_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;accessed_on&quot;: &quot;2026-09-22&quot;,
+      &quot;integration&quot;: &quot;reference_link_only&quot;
+    },
+    {
+      &quot;id&quot;: &quot;notes-windows&quot;,
+      &quot;title&quot;: &quot;Bypass007 · Windows 入侵排查&quot;,
+      &quot;url&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC01%E7%AB%A0%EF%BC%9A%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5%E7%AF%87/%E7%AC%AC1%E7%AF%87%EF%BC%9AWindows%20%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5.md&quot;,
+      &quot;repository&quot;: &quot;https://github.com/Bypass007/Emergency-Response-Notes&quot;,
+      &quot;repository_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;license_observed&quot;: &quot;no license detected in repository metadata&quot;,
+      &quot;content_revision&quot;: &quot;693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b&quot;,
+      &quot;accessed_on&quot;: &quot;2026-09-22&quot;,
+      &quot;integration&quot;: &quot;reference_link_only&quot;
+    }
+  ],
+  &quot;runbooks&quot;: [
+    {
+      &quot;id&quot;: &quot;IR-CORE&quot;,
+      &quot;title&quot;: &quot;调查范围、证据与恢复&quot;,
+      &quot;matched_rules&quot;: [],
+      &quot;selection_reason&quot;: &quot;platform_or_core_review&quot;
+    },
+    {
+      &quot;id&quot;: &quot;IR-LINUX&quot;,
+      &quot;title&quot;: &quot;Linux 主机排查&quot;,
+      &quot;matched_rules&quot;: [],
+      &quot;selection_reason&quot;: &quot;platform_or_core_review&quot;
+    },
+    {
+      &quot;id&quot;: &quot;IR-LATERAL&quot;,
+      &quot;title&quot;: &quot;横向访问与路径偏离&quot;,
+      &quot;matched_rules&quot;: [
+        &quot;B101&quot;,
+        &quot;B102&quot;,
+        &quot;C101&quot;
+      ],
+      &quot;selection_reason&quot;: &quot;rule_match&quot;
+    },
+    {
+      &quot;id&quot;: &quot;IR-PRIVILEGE&quot;,
+      &quot;title&quot;: &quot;异常授权与凭据访问&quot;,
+      &quot;matched_rules&quot;: [
+        &quot;B103&quot;,
+        &quot;B104&quot;,
+        &quot;C101&quot;
+      ],
+      &quot;selection_reason&quot;: &quot;rule_match&quot;
+    }
+  ],
+  &quot;checks&quot;: [
+    {
+      &quot;id&quot;: &quot;IR-001&quot;,
+      &quot;title&quot;: &quot;核实资产与事件范围&quot;,
+      &quot;objective&quot;: &quot;联系资产负责人，确认授权范围、业务影响、主机身份和系统类型。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;资产登记与负责人确认&quot;,
+        &quot;告警原始记录和变更单&quot;
+      ],
+      &quot;interpretation&quot;: &quot;日志中的主机标签不证明资产归属；角色来自已审核登记。平台不根据进程名猜测操作系统。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-linux&quot;,
+        &quot;notes-windows&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;核对资产角色、重要性、责任人与受保护管理路径。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-CORE&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;IR-002&quot;,
+      &quot;title&quot;: &quot;建立可核对的时间线&quot;,
+      &quot;objective&quot;: &quot;记录时区、时钟偏差和日志覆盖时段，对齐告警、身份、网络及应用记录。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;带时区的原始时间戳&quot;,
+        &quot;采集时间、来源、日志轮转与缺口&quot;,
+        &quot;保全副本及其 SHA256&quot;
+      ],
+      &quot;interpretation&quot;: &quot;日志缺失、history 空白或文件时间接近，均不能单独证明未入侵或确定攻击时间。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-logs&quot;,
+        &quot;notes-web&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;审核日志留存、时间同步、必填字段与缺失遥测提醒。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-CORE&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;IR-003&quot;,
+      &quot;title&quot;: &quot;确定最小处置范围&quot;,
+      &quot;objective&quot;: &quot;保全短暂证据后，确认用户、应用和管理通道，制定有时限的处置与回滚步骤。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;当前会话或连接证据&quot;,
+        &quot;审批记录、业务联系人和回滚条件&quot;
+      ],
+      &quot;interpretation&quot;: &quot;检查清单不构成授权；云脉交接限制用户到应用访问，不等同于主机隔离。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-linux&quot;,
+        &quot;notes-windows&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;复核应急用户到应用绑定、审批期限和管理通道保护。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-CORE&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;IR-004&quot;,
+      &quot;title&quot;: &quot;验证恢复并提出基线复盘&quot;,
+      &quot;objective&quot;: &quot;核验入口修复、凭据处置和业务恢复，观察是否再次出现同类偏离。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;修复与恢复记录&quot;,
+        &quot;处置后日志及业务验收&quot;,
+        &quot;复测时段和仍缺失的证据&quot;
+      ],
+      &quot;interpretation&quot;: &quot;未复现告警只描述当前观察窗口；不能宣告系统永久安全。恶意行为不能登记为正常基线。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-web&quot;,
+        &quot;notes-windows&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;将已确认的正常路径和恶意偏离分别交给基线负责人审核；不自动放行。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-CORE&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LX-001&quot;,
+      &quot;title&quot;: &quot;核验账户与权限变更&quot;,
+      &quot;objective&quot;: &quot;对照账户清单和工单检查新账户、特权组、sudo 授权及 SSH 公钥变化。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;账户与授权配置的可信基线差异&quot;,
+        &quot;SSH 公钥指纹、所有者和变更记录&quot;,
+        &quot;身份或 sudo 审计&quot;
+      ],
+      &quot;interpretation&quot;: &quot;服务账户和备份操作需与业务核对；不以密码哈希格式推断可远程登录，不采集私钥或 shadow 内容。&quot;,
+      &quot;commands&quot;: [
+        &quot;getent passwd&quot;,
+        &quot;getent group&quot;
+      ],
+      &quot;source_ids&quot;: [
+        &quot;nop-checks&quot;,
+        &quot;notes-linux&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;复核 B103/B104 允许的操作者、目标身份、权限和提权程序；密钥变化纳入变更审计。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LINUX&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LX-002&quot;,
+      &quot;title&quot;: &quot;区分 SSH 尝试、成功登录与后续行为&quot;,
+      &quot;objective&quot;: &quot;在限定时段关联失败、成功认证、来源、账户和登录后的行为。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;sshd/auth.log/secure 或集中认证日志&quot;,
+        &quot;登录来源与账户&quot;,
+        &quot;登录后的命令审计或网络记录&quot;
+      ],
+      &quot;interpretation&quot;: &quot;失败次数和 SYN_RECV 连接都不能证明成功入侵；last 只反映可用的本机登录记录。&quot;,
+      &quot;commands&quot;: [
+        &quot;last -F -n 30&quot;,
+        &quot;journalctl --no-pager -u sshd -u ssh --since \&quot;1 hour ago\&quot; -n 200&quot;
+      ],
+      &quot;source_ids&quot;: [
+        &quot;notes-ssh&quot;,
+        &quot;notes-logs&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;审核远程登录入口、允许来源、MFA 与认证日志覆盖。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LINUX&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LX-003&quot;,
+      &quot;title&quot;: &quot;检查定时任务与服务定义&quot;,
+      &quot;objective&quot;: &quot;对照发行版和用户范围，核查 cron、at、systemd 服务、定时器及用户级单元。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;任务或 unit 原文的保全副本&quot;,
+        &quot;执行主体、程序路径与变更工单&quot;,
+        &quot;对应执行日志&quot;
+      ],
+      &quot;interpretation&quot;: &quot;当前用户的 crontab 不能代表所有用户；一次列表为空也不能排除其他调度机制。&quot;,
+      &quot;commands&quot;: [
+        &quot;crontab -l&quot;,
+        &quot;atq&quot;,
+        &quot;systemctl --no-pager list-timers --all&quot;,
+        &quot;systemctl --no-pager list-unit-files --type=service&quot;
+      ],
+      &quot;source_ids&quot;: [
+        &quot;nop-checks&quot;,
+        &quot;notes-linux&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;登记批准任务的用户、程序、触发时段与变更流程；完善持久化遥测。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LINUX&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LX-004&quot;,
+      &quot;title&quot;: &quot;检查非典型自动执行入口&quot;,
+      &quot;objective&quot;: &quot;在保全副本中比对启动脚本、shell profile、udev 规则和 Python .pth 文件。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;发行版对应配置路径与所有者&quot;,
+        &quot;与可信镜像或配置库的内容差异&quot;,
+        &quot;变更审计与执行证据&quot;
+      ],
+      &quot;interpretation&quot;: &quot;文件存在或带可执行权限不等于后门；不要启动可疑解释器、source 配置或 import 可疑模块来检查。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;nop-checks&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;将这些配置纳入完整性监控；现有引擎没有覆盖全部入口的自动检测器。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LINUX&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LX-005&quot;,
+      &quot;title&quot;: &quot;核验动态加载与认证组件&quot;,
+      &quot;objective&quot;: &quot;对照可信包与配置，检查预加载配置、PAM 配置及相关库文件。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;ld.so.preload、PAM 配置的保全副本&quot;,
+        &quot;库文件哈希及可信包来源&quot;,
+        &quot;配置变更记录&quot;
+      ],
+      &quot;interpretation&quot;: &quot;在疑似被篡改系统上，工具输出可能不可信；不调用 ldd 或执行可疑程序作验证。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;nop-checks&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;建立认证组件和加载配置的完整性基线，异常时改用可信环境复核。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LINUX&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LX-006&quot;,
+      &quot;title&quot;: &quot;复核工具、内核与软件包可信度&quot;,
+      &quot;objective&quot;: &quot;交叉比对进程可见性、模块清单及软件包文件与外部可信镜像。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;进程快照与端点/虚拟化侧交叉证据&quot;,
+        &quot;模块与软件包清单&quot;,
+        &quot;独立可信包或镜像哈希&quot;
+      ],
+      &quot;interpretation&quot;: &quot;容器、权限和进程退出会造成视图差异；本机包数据库也可能受影响，单次差异不能确认 rootkit。&quot;,
+      &quot;commands&quot;: [
+        &quot;ps -eo pid,ppid,user,lstart,comm --sort=pid&quot;,
+        &quot;lsmod&quot;
+      ],
+      &quot;source_ids&quot;: [
+        &quot;nop-checks&quot;,
+        &quot;notes-linux&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;审核可信工具来源、镜像版本、内核模块审批和采集权限覆盖。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LINUX&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LM-001&quot;,
+      &quot;title&quot;: &quot;核验连接身份与业务路径&quot;,
+      &quot;objective&quot;: &quot;核对源资产地址、目标资产、端口、协议及账户，回查跳板机与变更单。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;两端或网关连接日志&quot;,
+        &quot;登记的资产 IP 与角色&quot;,
+        &quot;跳板路径及授权记录&quot;
+      ],
+      &quot;interpretation&quot;: &quot;端口访问不证明远程执行；NAT、共享 IP 和扫描器会改变源身份解释。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-linux&quot;,
+        &quot;notes-ssh&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;复核 B101/B102 的正常目的网段、端口、协议及扇出门槛。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LATERAL&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;LM-002&quot;,
+      &quot;title&quot;: &quot;复核同账户行为链&quot;,
+      &quot;objective&quot;: &quot;检查权限变化后是否由同一活动账户访问新目标，核对先后顺序和时间窗。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;身份变更主体、结果和时间&quot;,
+        &quot;连接用户与目标&quot;,
+        &quot;目标侧登录或执行记录&quot;
+      ],
+      &quot;interpretation&quot;: &quot;时间关联不是因果证明；账户字段缺失或结果未知时，应标记证据缺口。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-logs&quot;,
+        &quot;notes-windows&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;完善 C101 所需主体与成功结果字段，评审应急访问期限。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-LATERAL&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;PR-001&quot;,
+      &quot;title&quot;: &quot;核对权限变更的真实结果&quot;,
+      &quot;objective&quot;: &quot;对照身份提供方、目标系统及审批单，核验操作者、目标账户与最终权限。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;权限变更成功/失败结果&quot;,
+        &quot;原始操作者与目标权限&quot;,
+        &quot;审批单和同步任务记录&quot;
+      ],
+      &quot;interpretation&quot;: &quot;申请或尝试不能当作授权成功；身份同步延迟和应急工单也需要复核。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;notes-linux&quot;,
+        &quot;notes-windows&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;只把经批准的精确授权组合提交基线评审，禁止宽泛允许。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-PRIVILEGE&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    },
+    {
+      &quot;id&quot;: &quot;PR-002&quot;,
+      &quot;title&quot;: &quot;评估凭据暴露与会话影响&quot;,
+      &quot;objective&quot;: &quot;确认可疑读取是否成功以及会话影响范围，提出凭据轮换和访问复核任务。&quot;,
+      &quot;evidence_required&quot;: [
+        &quot;访问审计与可信授权结果&quot;,
+        &quot;会话/凭据责任人&quot;,
+        &quot;轮换和回滚审批记录&quot;
+      ],
+      &quot;interpretation&quot;: &quot;保留访问证据即可，不上传私钥、密码、令牌原文；轮换可能影响业务，需要独立审批。&quot;,
+      &quot;commands&quot;: [],
+      &quot;source_ids&quot;: [
+        &quot;nop-checks&quot;,
+        &quot;notes-windows&quot;
+      ],
+      &quot;baseline_feedback&quot;: &quot;审核工作负载凭据最小权限、会话期限及敏感访问记录。&quot;,
+      &quot;execution&quot;: &quot;manual_reference_only&quot;,
+      &quot;runbook_id&quot;: &quot;IR-PRIVILEGE&quot;,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;review&quot;: null
+    }
+  ],
+  &quot;history&quot;: [],
+  &quot;changes_applied&quot;: false,
+  &quot;notice&quot;: &quot;人工调查记录；平台不执行命令。核验结果不修改风险分、基线或处置授权。&quot;
+}</pre><h4>待审核基线复盘建议</h4><pre>{
+  &quot;schema_version&quot;: 1,
+  &quot;type&quot;: &quot;baseline_review_tasks&quot;,
+  &quot;incident_id&quot;: &quot;case-5b94c7a6462c5a105596&quot;,
+  &quot;host&quot;: &quot;workstation-demo&quot;,
+  &quot;worksheet_revision&quot;: 0,
+  &quot;policy_digest&quot;: &quot;48ea8fe8eef9f472b3d128f390d80618287d7ef477930850a4be1b8bb670c372&quot;,
+  &quot;enabled&quot;: false,
+  &quot;changes_applied&quot;: false,
+  &quot;tasks&quot;: [],
+  &quot;notice&quot;: &quot;复盘建议需另行审核；本文件不是可加载的策略，不会生成允许项或屏蔽告警。&quot;
+}</pre></div></details><div class="note">零信任访问判定需由接入网关执行；本地防火墙适配器仅对指定对端实施有时限的入站、出站封禁。域名命中不自动扩展为整个云服务商封禁。</div><details><summary>数据质量与排除统计</summary><pre>{
+  &quot;events&quot;: {
+    &quot;input_events&quot;: 11,
+    &quot;analyzed_events&quot;: 11,
+    &quot;future_events&quot;: 0,
+    &quot;stale_events&quot;: 0,
+    &quot;suppressed_findings&quot;: 0,
+    &quot;duplicates&quot;: 0,
+    &quot;unsupported_events&quot;: 0
+  },
+  &quot;intel&quot;: {
+    &quot;expired&quot;: 0,
+    &quot;future&quot;: 0,
+    &quot;revoked&quot;: 0,
+    &quot;low_confidence&quot;: 0
+  },
+  &quot;warnings&quot;: []
+}</pre></details><footer>生成时间：2026-09-22T06:39:20.999006Z<br>策略摘要：48ea8fe8eef9f472b3d128f390d80618287d7ef477930850a4be1b8bb670c372<br>Sentinel-ZT-CTTR 0.4.0 · 本地离线报告 · 日志可能含敏感字段，请按事件材料管理。</footer></main></body></html>

@@ -9,7 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from .common import digest, iso, read_bytes, timestamp
+from .common import digest, ip_literal, iso, read_bytes, strict_json, timestamp
+
+MAX_EVENTS = 10000
+DERIVED_FIELDS = {"id", "evidence", "process_name", "parent_process_name", "path_normalized", "query_normalized"}
 
 NGINX = re.compile(r'^(\S+) \S+ \S+ \[([^]]+)\] "(\S+) (.*?) HTTP/[^" ]+" (\d{3}) (\S+)(?: "([^"]*)" "([^"]*)")?')
 
@@ -24,14 +27,27 @@ def canonical_event(row, source, line):
     for key in ("timestamp", "host", "event_type"):
         if not isinstance(row.get(key), str) or not row[key].strip():
             raise ValueError(f"event requires nonempty {key}")
-    result = dict(row)
+    result = {k: v for k, v in row.items() if k not in DERIVED_FIELDS}
+    for key in ("process", "parent_process", "url", "path", "query", "domain", "command_line",
+                "file_path", "registry_path", "action", "tool", "method", "product", "uploaded_filename",
+                "sha256", "sha1", "md5", "src_ip", "dst_ip", "user", "actor", "target_user",
+                "target_role", "outcome", "transport"):
+        if row.get(key) is not None and not isinstance(row[key], str):
+            raise ValueError(f"{key} must be a string")
+    for key in ("user", "actor", "target_user", "target_role", "outcome", "transport"):
+        if row.get(key) is not None and len(row[key]) > 512:
+            raise ValueError(f"{key} exceeds 512 characters")
+    if row.get("outcome") is not None and row["outcome"] not in {"success", "failure", "unknown"}:
+        raise ValueError("outcome must be success, failure or unknown")
+    if row.get("transport") is not None:
+        result["transport"] = row["transport"].lower()
     result["timestamp"] = iso(timestamp(row["timestamp"]))
     for key in ("authenticated", "authorized", "approved", "verified", "webroot"):
         if key in row and type(row[key]) is not bool:
             raise ValueError(f"{key} must be boolean; missing means unknown")
     for key in ("src_ip", "dst_ip"):
         if row.get(key):
-            result[key] = str(ipaddress.ip_address(row[key]))
+            result[key] = str(ip_literal(row[key]))
     for key in ("src_port", "dst_port", "status"):
         if row.get(key) is not None:
             v = row[key]
@@ -44,10 +60,12 @@ def canonical_event(row, source, line):
     # Never normalize away the original request or infer authentication from HTTP status.
     target = row.get("url") or row.get("path", "")
     if target:
-        p = urlsplit(target)
+        p = urlsplit("http://sentinel.invalid" + target if target.startswith("/") else target)
+        if p.query and row.get("query") is not None and row["query"] != p.query:
+            raise ValueError("conflicting query representations")
         result["path_normalized"] = unquote(unquote(p.path)).lower()
-        result["query_normalized"] = unquote(unquote(row.get("query", p.query))).lower()
-        if p.hostname and not row.get("domain"):
+        result["query_normalized"] = unquote(unquote(row.get("query") or p.query)).lower()
+        if p.hostname and not target.startswith("/") and not row.get("domain"):
             result["domain"] = p.hostname
     # The caller's event ID remains metadata, never a deduplication or trust key.
     result.pop("id", None)
@@ -85,7 +103,8 @@ def sysmon(row):
               "parent_guid": data.get("ParentProcessGuid", ""), "sysmon_event_id": event_id}
     if event_id == 3:
         result.update(src_ip=data.get("SourceIp"), dst_ip=data.get("DestinationIp"),
-                      src_port=data.get("SourcePort"), dst_port=data.get("DestinationPort"))
+                      src_port=data.get("SourcePort"), dst_port=data.get("DestinationPort"),
+                      transport=data.get("Protocol"))
         if data.get("Initiated") in ("true", "false", True, False):
             result["direction"] = "outbound" if data["Initiated"] in ("true", True) else "inbound"
     if event_id == 11:
@@ -113,6 +132,7 @@ def eve(row, host):
               "event_type": "http" if kind == "http" else "dns" if kind == "dns" else "network",
               "src_ip": row.get("src_ip"), "dst_ip": row.get("dest_ip"),
               "src_port": row.get("src_port"), "dst_port": row.get("dest_port"),
+              "transport": row.get("proto"),
               "sensor_event_type": kind}
     if kind == "http":
         data = row.get("http", {})
@@ -149,16 +169,19 @@ def load_events(paths, fmt="canonical", host=None):
         raw = read_bytes(path)
         manifests.append({"source": Path(path).name, "sha256": hashlib.sha256(raw).hexdigest(),
                           "size_bytes": len(raw)})
-        for number, line in enumerate(raw.decode("utf-8-sig").splitlines(), 1):
+        # JSON strings may legitimately contain U+0085/U+2028/U+2029. Only
+        # physical LF/CRLF delimit records; str.splitlines() splits those too.
+        for number, line in enumerate(raw.decode("utf-8-sig").split("\n"), 1):
+            line = line.removesuffix("\r")
             if not line.strip():
                 continue
-            if len(line) > 1024 * 1024:
+            if len(line.encode("utf-8")) > 1024 * 1024:
                 raise ValueError(f"line too long: {Path(path).name}:{number}")
             try:
                 if fmt == "nginx":
                     row = nginx(line, host)
                 else:
-                    row = json.loads(line)
+                    row = strict_json(line)
                     if fmt == "sysmon":
                         row = sysmon(row)
                     elif fmt == "suricata":
@@ -167,6 +190,8 @@ def load_events(paths, fmt="canonical", host=None):
                     ignored += 1
                     continue
                 event = canonical_event(row, Path(path).name, number)
+                # Hash the actual imported line, not a lossy adapter projection.
+                event["evidence"]["raw_sha256"] = hashlib.sha256(line.encode("utf-8")).hexdigest()
             except (ValueError, KeyError, TypeError, AttributeError) as exc:
                 raise ValueError(f"invalid event {Path(path).name}:{number}: {exc}") from exc
             if event["id"] in seen:
@@ -174,7 +199,7 @@ def load_events(paths, fmt="canonical", host=None):
             else:
                 events.append(event)
                 seen.add(event["id"])
-            if len(events) > 100_000:
-                raise ValueError("event limit 100000 exceeded; split the investigation")
-    return sorted(events, key=lambda x: (x["timestamp"], x["id"])), manifests, {
+            if len(events) > MAX_EVENTS:
+                raise ValueError(f"event limit {MAX_EVENTS} exceeded; split the investigation")
+    return sorted(events, key=lambda x: (timestamp(x["timestamp"]), x["id"])), manifests, {
         "duplicates": duplicates, "unsupported_events": ignored}

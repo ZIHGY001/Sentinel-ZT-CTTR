@@ -16,12 +16,15 @@ import socket
 import sqlite3
 import stat
 import subprocess
+import sys
 from datetime import timedelta
 from pathlib import Path
 
-from .common import canonical, digest, iso, timestamp, write_json
+from .common import canonical, digest, ip_literal, iso, now_utc, private_directory, private_file, timestamp, write_json
 from .engine import protected_ip
+from .intel import Indicator
 from .policy import validate
+from .baselines import profile_status
 
 
 def new_key(path):
@@ -33,12 +36,12 @@ def new_key(path):
 
 
 def key_bytes(path):
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     fd = os.open(path, flags)
     with os.fdopen(fd, "rb") as stream:
         info = os.fstat(stream.fileno())
-        if not stat.S_ISREG(info.st_mode):
-            raise ValueError("key must be a regular file")
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ValueError("key must be a single-link regular file")
         if os.name == "posix" and (info.st_uid != os.geteuid() or info.st_mode & 0o077):
             raise ValueError("key must be owned by current user with mode 0600 or stricter")
         key = stream.read(4097)
@@ -76,7 +79,7 @@ def validate_action(plan, action, config, now, local_asset=None):
         raise ValueError("asset is not enabled for bounded response")
     if local_asset is not None and local_asset != host:
         raise ValueError("wrong endpoint: action must run on its registered local asset")
-    peer = str(ipaddress.ip_address(action["peer_ip"]))
+    peer = str(ip_literal(action["peer_ip"]))
     if peer != action["peer_ip"] or protected_ip(peer, config) or peer in asset.get("ips", []):
         raise ValueError("peer address is protected or invalid")
     if type(action.get("ttl_seconds")) is not int or not 30 <= action["ttl_seconds"] <= config.get("block_ttl_seconds", 300):
@@ -86,8 +89,29 @@ def validate_action(plan, action, config, now, local_asset=None):
     if not action.get("evidence_ids"):
         raise ValueError("action has no evidence")
     age = (now - timestamp(action["last_evidence_at"])).total_seconds()
-    if not 0 <= age <= config.get("max_evidence_age_seconds", 900):
+    if not 0 <= age < config.get("max_evidence_age_seconds", 900):
         raise ValueError("peer evidence is stale or from the future")
+    if not action.get("behavior_evidence_ids") or not re.fullmatch(r"B\d{3}", action.get("behavior_rule_id") or ""):
+        raise ValueError("fresh independent behavior evidence required; re-analyze the case")
+    age = (now - timestamp(action.get("behavior_evidence_at"))).total_seconds()
+    if not 0 <= age < config.get("max_evidence_age_seconds", 900):
+        raise ValueError("independent behavior evidence is stale or from the future")
+    if action["behavior_rule_id"] in {"B101", "B102", "B103", "B104"}:
+        profile = config.get("behavior_baselines", {}).get(asset.get("baseline_profile"))
+        if profile_status(profile, now) != "active":
+            raise ValueError("reviewed behavior baseline is no longer active")
+    support = action.get("intel_evidence")
+    if not isinstance(support, dict):
+        raise ValueError("bound IOC validity required; re-analyze and re-approve")
+    indicator = Indicator.parse(support)
+    if (indicator.type != "ip" or indicator.value != peer or indicator.revoked
+            or indicator.confidence < config.get("min_intel_confidence", 60)
+            or support.get("evidence_id") not in action["evidence_ids"]
+            or support.get("observed_at") != action["last_evidence_at"]):
+        raise ValueError("IOC support does not match the approved peer evidence")
+    start, end = timestamp(indicator.valid_from), timestamp(indicator.valid_until)
+    if not start <= now < end or not start <= timestamp(support["observed_at"]) < end:
+        raise ValueError("bound IOC is expired or not yet valid")
 
 
 def approve(plan, action_id, config, operator, key, now, lifetime=300):
@@ -97,9 +121,15 @@ def approve(plan, action_id, config, operator, key, now, lifetime=300):
     validate_action(plan, action, config, now)
     if type(lifetime) is not int or not 1 <= lifetime <= 300:
         raise ValueError("approval lifetime must be 1..300 seconds")
+    baseline_deadline = now + timedelta(seconds=lifetime)
+    if action["behavior_rule_id"] in {"B101", "B102", "B103", "B104"}:
+        baseline_deadline = timestamp(config["behavior_baselines"][config["assets"][action["host"]]["baseline_profile"]]["valid_until"])
     payload = {"version": 1, "plan_digest": digest(plan), "action_id": action_id,
                "operator": operator, "issued_at": iso(now),
-               "expires_at": iso(min(now + timedelta(seconds=lifetime), timestamp(plan["expires_at"]))),
+               "expires_at": iso(min(now + timedelta(seconds=lifetime), baseline_deadline, timestamp(plan["expires_at"]),
+                                     timestamp(action["intel_evidence"]["valid_until"]),
+                                     timestamp(action["last_evidence_at"]) + timedelta(seconds=config.get("max_evidence_age_seconds", 900)),
+                                     timestamp(action["behavior_evidence_at"]) + timedelta(seconds=config.get("max_evidence_age_seconds", 900)))),
                "nonce": secrets.token_hex(16)}
     return {"payload": payload, "signature": sign(payload, key)}
 
@@ -126,7 +156,7 @@ def table_name(action):
 
 
 def render_nft(action):
-    peer = ipaddress.ip_address(action["peer_ip"])
+    peer = ip_literal(action["peer_ip"])
     ttl = action["ttl_seconds"]
     if type(ttl) is not int or not 30 <= ttl <= 3600:
         raise ValueError("invalid timeout")
@@ -145,33 +175,38 @@ def render_nft(action):
 class Journal:
     """SQLite provides local writer serialization; audit entries form a keyed chain."""
     def __init__(self, directory, key):
-        path = Path(directory)
-        if path.is_symlink():
-            raise ValueError("state directory cannot be a symlink")
-        path.mkdir(mode=0o700, parents=True, exist_ok=True)
-        info = path.stat()
-        if os.name == "posix" and (info.st_uid != os.geteuid() or info.st_mode & 0o077):
-            raise ValueError("state directory must be current-user-owned with mode 0700")
+        path = private_directory(directory)
         db = path / "response.sqlite3"
-        if db.is_symlink():
-            raise ValueError("state DB cannot be a symlink")
-        self.lock_fd = None
-        if os.name == "posix":
-            import fcntl
-            self.lock_fd = os.open(path / "response.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
-            fcntl.flock(self.lock_fd, fcntl.LOCK_EX)
-        self.key = key
-        self.db = sqlite3.connect(db, timeout=10)
-        os.chmod(db, 0o600)
-        self.db.execute("PRAGMA journal_mode=WAL")
-        self.db.execute("CREATE TABLE IF NOT EXISTS actions (id TEXT PRIMARY KEY, status TEXT, receipt TEXT)")
-        self.db.execute("CREATE TABLE IF NOT EXISTS audit (seq INTEGER PRIMARY KEY, payload TEXT, mac TEXT)")
-        self.db.commit()
+        private_file(db)
+        self.lock_fd = self.db = None
+        try:
+            if os.name == "posix":
+                import fcntl
+                private_file(path / "response.lock")
+                self.lock_fd = os.open(path / "response.lock", os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK)
+                fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.key = key
+            self.db = sqlite3.connect(db, timeout=10)
+            self.db.execute("PRAGMA journal_mode=WAL")
+            self.db.execute("CREATE TABLE IF NOT EXISTS actions (id TEXT PRIMARY KEY, status TEXT, receipt TEXT)")
+            self.db.execute("CREATE TABLE IF NOT EXISTS audit (seq INTEGER PRIMARY KEY, payload TEXT, mac TEXT)")
+            self.db.commit()
+        except BlockingIOError:
+            self.close()
+            raise ValueError("response journal busy; retry with a fresh approval") from None
+        except BaseException:
+            self.close()
+            raise
 
     def close(self):
-        self.db.close()
-        if self.lock_fd is not None:
-            os.close(self.lock_fd)
+        try:
+            if self.db is not None:
+                self.db.close()
+                self.db = None
+        finally:
+            if self.lock_fd is not None:
+                os.close(self.lock_fd)
+                self.lock_fd = None
 
     def append(self, event):
         last = self.db.execute("SELECT mac FROM audit ORDER BY seq DESC LIMIT 1").fetchone()
@@ -190,6 +225,11 @@ class Journal:
         return {"entries": count, "head_mac": previous, "verified": True,
                 "limitation": "Export head_mac externally to detect tail truncation or full replacement."}
 
+    def history(self, action_id):
+        """Call after verify(); the signed audit, not the mutable cache, is authoritative."""
+        return [event for (payload,) in self.db.execute("SELECT payload FROM audit ORDER BY seq")
+                if (event := json.loads(payload)).get("action_id") == action_id]
+
 
 def run_nft(script, check=False):
     binary = next((x for x in ("/usr/sbin/nft", "/sbin/nft", "/usr/bin/nft") if Path(x).is_file()), None)
@@ -203,11 +243,11 @@ def run_nft(script, check=False):
 
 
 def require_root():
-    if os.name != "posix" or os.geteuid() != 0:
+    if sys.platform != "linux" or os.geteuid() != 0:
         raise ValueError("live response requires Linux root privileges on the target endpoint")
 
 
-def apply(plan, approval, config, key, now, state, local_asset, live=False, runner=run_nft):
+def apply(plan, approval, config, key, now, state, local_asset, live=False, runner=run_nft, clock=now_utc):
     action = verify_approval(plan, approval, config, key, now)
     validate_action(plan, action, config, now, local_asset)
     script = render_nft(action)
@@ -220,8 +260,12 @@ def apply(plan, approval, config, key, now, state, local_asset, live=False, runn
     journal = Journal(state, key)
     try:
         journal.verify()
+        now = clock()
+        verify_approval(plan, approval, config, key, now)
+        validate_action(plan, action, config, now, local_asset)
         journal.db.execute("BEGIN IMMEDIATE")
-        if journal.db.execute("SELECT 1 FROM actions WHERE id=?", (action["id"],)).fetchone():
+        if (journal.history(action["id"])
+                or journal.db.execute("SELECT 1 FROM actions WHERE id=?", (action["id"],)).fetchone()):
             raise ValueError("action already journaled; inspect/rollback instead of replaying")
         receipt = {"action": action, "plan_digest": digest(plan), "operator": approval["payload"]["operator"],
                    "created_at": iso(now), "table": table_name(action),
@@ -231,6 +275,15 @@ def apply(plan, approval, config, key, now, state, local_asset, live=False, runn
         journal.db.commit()
         try:
             runner(script, check=True)
+            current = clock()
+            verify_approval(plan, approval, config, key, current)
+            validate_action(plan, action, config, current, local_asset)
+        except Exception as exc:
+            journal.db.execute("UPDATE actions SET status=? WHERE id=?", ("not_applied", action["id"]))
+            journal.append({"event": "apply_preflight_failed", "action_id": action["id"], "error_type": type(exc).__name__})
+            journal.db.commit()
+            raise RuntimeError("preflight failed or authorization expired; no firewall change was requested") from exc
+        try:
             runner(script, check=False)
         except Exception as exc:
             # A timeout can occur AFTER the kernel transaction commits. Never claim no change.
@@ -252,7 +305,8 @@ def owned_table(action):
     if not binary:
         raise ValueError("nftables executable not found")
     result = subprocess.run([binary, "--json", "list", "table", "inet", table_name(action)],
-                            text=True, capture_output=True, timeout=10, check=False)
+                            text=True, capture_output=True, timeout=10, check=False,
+                            env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"})
     if result.returncode:
         raise ValueError("table missing or inaccessible; inspect manually before changing journal")
     tables = [x["table"] for x in json.loads(result.stdout).get("nftables", []) if "table" in x]
@@ -270,22 +324,39 @@ def rollback(action_id, key, state, now, local_asset, live=False, runner=run_nft
             raise ValueError("no local action receipt")
         receipt = json.loads(row[1])
         # Check receipt against authenticated audit intent, not only the mutable actions table.
-        intents = [json.loads(x[0]) for x in journal.db.execute("SELECT payload FROM audit ORDER BY seq")]
-        if not any(x.get("event") == "apply_intent" and x.get("action_id") == action_id
-                   and x.get("receipt") == receipt for x in intents):
+        history = journal.history(action_id)
+        intents = [x for x in history if x.get("event") == "apply_intent"]
+        if len(intents) != 1 or intents[0].get("receipt") != receipt:
             raise ValueError("receipt does not match signed audit intent")
+        states = {"apply_intent": "pending", "apply_success": "applied", "apply_uncertain": "uncertain",
+                  "apply_preflight_failed": "not_applied", "rollback_intent": "rollback_pending",
+                  "rollback_success": "rolled_back", "rollback_uncertain": "rollback_uncertain"}
+        signed_state = next((states[x["event"]] for x in reversed(history) if x.get("event") in states), None)
+        if row[0] != signed_state:
+            raise ValueError("action state does not match signed audit history")
         action = receipt["action"]
         if action["host"] != local_asset:
             raise ValueError("rollback asset mismatch")
         script = f"delete table inet {table_name(action)}\n"
         if row[0] == "rolled_back":
             return {"status": "already_rolled_back", "changes_applied": False}
+        if row[0] == "not_applied":
+            return {"status": "not_applied", "changes_applied": False}
         if not live:
             return {"status": "dry_run", "nft_script": script, "changes_applied": False}
         require_root()
         if not ownership(action):
             raise ValueError("table ownership comment mismatch")
-        runner(script, check=False)
+        journal.db.execute("UPDATE actions SET status=? WHERE id=?", ("rollback_pending", action_id))
+        journal.append({"event": "rollback_intent", "action_id": action_id, "at": iso(now)})
+        journal.db.commit()
+        try:
+            runner(script, check=False)
+        except Exception as exc:
+            journal.db.execute("UPDATE actions SET status=? WHERE id=?", ("rollback_uncertain", action_id))
+            journal.append({"event": "rollback_uncertain", "action_id": action_id, "error_type": type(exc).__name__})
+            journal.db.commit()
+            raise RuntimeError("rollback outcome uncertain; inspect the action-owned nft table before retrying") from exc
         journal.db.execute("UPDATE actions SET status=? WHERE id=?", ("rolled_back", action_id))
         journal.append({"event": "rollback_success", "action_id": action_id, "at": iso(now)})
         journal.db.commit()

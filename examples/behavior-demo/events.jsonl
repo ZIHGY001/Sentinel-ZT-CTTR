@@ -1,0 +1,11 @@
+{"action":"role_grant","actor":"helpdesk-demo","event_type":"identity","host":"workstation-demo","outcome":"success","target_role":"DomainAdmin","target_user":"alice-demo","timestamp":"2026-09-21T05:22:01.625450Z"}
+{"action":"elevate","event_type":"privilege","host":"workstation-demo","outcome":"success","process":"/usr/bin/sudo","target_user":"root","timestamp":"2026-09-21T05:22:31.625450Z","user":"alice-demo"}
+{"dst_ip":"192.0.2.20","dst_port":445,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-21T05:23:01.625450Z","transport":"tcp","user":"alice-demo"}
+{"dst_ip":"192.0.2.20","dst_port":445,"event_type":"network","host":"bastion-demo","src_ip":"192.0.2.30","timestamp":"2026-09-21T05:23:31.625450Z","transport":"tcp","user":"admin-demo"}
+{"dst_ip":"192.0.2.21","dst_port":3389,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-21T05:23:11.625450Z","transport":"tcp","user":"alice-demo"}
+{"dst_ip":"192.0.2.21","dst_port":3389,"event_type":"network","host":"bastion-demo","src_ip":"192.0.2.30","timestamp":"2026-09-21T05:23:41.625450Z","transport":"tcp","user":"admin-demo"}
+{"dst_ip":"192.0.2.22","dst_port":5985,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-21T05:23:21.625450Z","transport":"tcp","user":"alice-demo"}
+{"dst_ip":"192.0.2.22","dst_port":5985,"event_type":"network","host":"bastion-demo","src_ip":"192.0.2.30","timestamp":"2026-09-21T05:23:51.625450Z","transport":"tcp","user":"admin-demo"}
+{"dst_ip":"192.0.2.30","dst_port":22,"event_type":"network","host":"workstation-demo","src_ip":"192.0.2.10","timestamp":"2026-09-21T05:24:21.625450Z","transport":"tcp","user":"employee-demo"}
+{"action":"role_grant","actor":"iam-service","event_type":"identity","host":"workstation-demo","outcome":"success","target_role":"Reader","target_user":"employee-demo","timestamp":"2026-09-21T05:24:31.625450Z"}
+{"action":"elevate","event_type":"privilege","host":"workstation-demo","outcome":"success","process":"/usr/bin/sudo","target_user":"root","timestamp":"2026-09-21T05:24:41.625450Z","user":"patch-service"}

@@ -8,18 +8,24 @@ import re
 import sqlite3
 import subprocess
 import tempfile
+import threading
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, Field
+import anyio
 
-from . import __version__, assets, demo, engine, events, intel, knowledge, policy, report
-from .common import atomic_write, canonical, digest, iso, load_json, now_utc, write_json
+from . import __version__, assets, baselines, behavior_demo, demo, deployment, engine, events, intel, knowledge, policy, report, runbooks, yunmai
+from .common import atomic_write, canonical, digest, load_json, now_utc, private_directory, private_file, strict_json, timestamp, write_json
+
+MAX_HANDOFF_FILES = 500
+MAX_HANDOFF_BYTES = 64 * 1024 * 1024
 
 
 class AnalysisInput(BaseModel):
@@ -51,6 +57,26 @@ class AgentInput(BaseModel):
     consent_to_model: bool = False
 
 
+class BaselinePolicyInput(BaseModel):
+    policy_config: dict
+
+
+class RunbookStart(BaseModel):
+    model_config = {"extra": "forbid"}
+    incident_id: str = Field(min_length=1, max_length=80)
+    platform: Literal["unknown", "linux", "windows"]
+
+
+class RunbookReview(BaseModel):
+    model_config = {"extra": "forbid"}
+    expected_revision: int = Field(ge=0, strict=True)
+    status: Literal["pending", "suspicious", "not_observed", "needs_data", "not_applicable"]
+    reviewer: str = Field(min_length=1, max_length=100)
+    observation: str = Field(min_length=1, max_length=2000)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=30)
+    artifacts: list[dict] = Field(default_factory=list, max_length=10)
+
+
 def agent_context(analysis, plan):
     """Only allowlisted summary fields leave the backend; raw logs/IPs/users do not."""
     aliases = {c["host"]: f"asset-{i+1}" for i, c in enumerate(analysis["incidents"])}
@@ -73,37 +99,67 @@ def create_app(data_dir=None, token=None, testing=False):
     token = token or os.environ.get("SENTINEL_API_TOKEN", "")
     if len(token) < 32:
         raise ValueError("set SENTINEL_API_TOKEN to a random secret of at least 32 characters")
-    root = Path(data_dir or os.environ.get("SENTINEL_DATA_DIR", ".sentinel-data")).resolve()
-    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    root = private_directory(data_dir or os.environ.get("SENTINEL_DATA_DIR", ".sentinel-data"))
+    private_file(root / "cases.sqlite3")
     app = FastAPI(title="Sentinel-ZT-CTTR", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
-    allowed_hosts = ["127.0.0.1", "localhost", "[::1]"] + (["testserver"] if testing else [])
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
-    origins = {"http://127.0.0.1:8000", "http://localhost:8000"}
-    origins.update(x for x in os.environ.get("SENTINEL_ALLOWED_ORIGINS", "").split(",") if x)
+    deploy = deployment.settings(testing=testing)
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=deploy["hosts"])
+    origins = deploy["origins"]
 
+    @contextmanager
     def db():
         con = sqlite3.connect(root / "cases.sqlite3")
-        con.execute("CREATE TABLE IF NOT EXISTS cases (id TEXT PRIMARY KEY, at TEXT, analysis TEXT, plan TEXT)")
-        return con
+        try:
+            with con:
+                con.execute("CREATE TABLE IF NOT EXISTS cases (id TEXT PRIMARY KEY, at TEXT, analysis TEXT, plan TEXT)")
+                con.execute("CREATE TABLE IF NOT EXISTS runbook_worksheets (case_id TEXT, incident_id TEXT, document TEXT, PRIMARY KEY (case_id, incident_id))")
+                yield con
+        finally:
+            con.close()
+
+    post_slots = threading.BoundedSemaphore(2)
+    agent_slot = threading.BoundedSemaphore(1)
+    handoff_lock = threading.Lock()
 
     @app.middleware("http")
     async def boundary(request: Request, call_next):
-        if request.url.path.startswith("/api/") and request.url.path != "/api/health":
+        mutation = request.method in {"POST", "PUT", "PATCH", "DELETE"}
+        if mutation and not request.url.path.startswith("/api/"):
+            return JSONResponse({"detail": "method not allowed"}, status_code=405)
+        public_health = request.url.path == "/api/health" and request.method in {"GET", "HEAD"}
+        if request.url.path.startswith("/api/") and not public_health:
             authorization = request.headers.get("authorization", "")
-            if not hmac.compare_digest(authorization, "Bearer " + token):
+            if not hmac.compare_digest(authorization.encode(), ("Bearer " + token).encode()):
                 return JSONResponse({"detail": "API token required"}, status_code=401)
             origin = request.headers.get("origin")
             if origin and origin not in origins:
                 return JSONResponse({"detail": "origin not allowed"}, status_code=403)
         if request.method in {"POST", "PUT", "PATCH"}:
-            chunks, total = [], 0
-            async for chunk in request.stream():
-                total += len(chunk)
-                if total > 8 * 1024 * 1024:
-                    return JSONResponse({"detail": "request exceeds 8 MiB"}, status_code=413)
-                chunks.append(chunk)
-            request._body = b"".join(chunks)
-        result = await call_next(request)
+            if not post_slots.acquire(blocking=False):
+                return JSONResponse({"detail": "workbench busy; retry later"}, status_code=429,
+                                    headers={"Retry-After": "2"})
+            try:
+                chunks, total = [], 0
+                with anyio.fail_after(15):
+                    async for chunk in request.stream():
+                        total += len(chunk)
+                        if total > 8 * 1024 * 1024:
+                            return JSONResponse({"detail": "request exceeds 8 MiB"}, status_code=413)
+                        chunks.append(chunk)
+                request._body = b"".join(chunks)
+                if request._body:
+                    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+                        return JSONResponse({"detail": "application/json required"}, status_code=415)
+                    strict_json(request._body)
+                result = await call_next(request)
+            except TimeoutError:
+                return JSONResponse({"detail": "request body timeout"}, status_code=408)
+            except ValueError:
+                return JSONResponse({"detail": "invalid JSON body"}, status_code=400)
+            finally:
+                post_slots.release()
+        else:
+            result = await call_next(request)
         result.headers["Cache-Control"] = "no-store"
         result.headers["X-Content-Type-Options"] = "nosniff"
         result.headers["Referrer-Policy"] = "no-referrer"
@@ -116,9 +172,15 @@ def create_app(data_dir=None, token=None, testing=False):
 
     def save_case(analysis, plan):
         ident = str(uuid.uuid4())
+        encoded_analysis, encoded_plan = canonical(analysis), canonical(plan)
+        if len(encoded_analysis) + len(encoded_plan) > 16 * 1024 * 1024:
+            raise ValueError("case exceeds 16 MiB; split the investigation")
         with db() as con:
+            con.execute("BEGIN IMMEDIATE")
+            if con.execute("SELECT count(*) FROM cases").fetchone()[0] >= 500:
+                raise HTTPException(409, "500-case workspace limit reached; archive this workspace before continuing")
             con.execute("INSERT INTO cases VALUES (?,?,?,?)", (ident, analysis["generated_at"],
-                        canonical(analysis).decode(), canonical(plan).decode()))
+                        encoded_analysis.decode(), encoded_plan.decode()))
         return {"id": ident, "analysis": analysis, "plan": plan}
 
     def get_case(ident):
@@ -132,13 +194,16 @@ def create_app(data_dir=None, token=None, testing=False):
             raise HTTPException(404, "case not found")
         return {"id": ident, "analysis": json.loads(row[0]), "plan": json.loads(row[1])}
 
-    def analyze_rows(raw_rows, indicators, cfg):
+    def analyze_rows(raw_rows, indicators, cfg, manifest=None, stats=None):
         now = now_utc()
         policy.validate(cfg)
         # Canonical input also receives deduplication, even in the demo/API path.
         ev = list({e["id"]: e for e in raw_rows}.values())
-        ev.sort(key=lambda e: (e["timestamp"], e["id"]))
+        ev.sort(key=lambda e: (timestamp(e["timestamp"]), e["id"]))
         a = engine.analyze(ev, indicators, now, cfg)
+        if manifest is not None:
+            a["input_manifest"] = manifest
+            a["statistics"].update(stats or {})
         if (root / "assets.json").exists():
             assets.enrich(a, load_json(root / "assets.json"), cfg, now)
         if (root / "knowledge.json").exists():
@@ -151,21 +216,120 @@ def create_app(data_dir=None, token=None, testing=False):
 
     @app.get("/api/status")
     def status():
-        return {"quake_configured": bool(os.environ.get("QUAKE_API_KEY")),
+        return {"deployment_mode": deploy["mode"],
+                "quake_configured": bool(os.environ.get("QUAKE_API_KEY")),
                 "scope_configured": bool(os.environ.get("SENTINEL_SCOPE")),
                 "agent_enabled": os.environ.get("SENTINEL_PI_ENABLED") == "1",
                 "knowledge_indexed": (root / "knowledge.json").exists(),
                 "live_response": "CLI only"}
 
+    @app.get("/api/integrations/yunmai")
+    def yunmai_status():
+        mapping_path = os.environ.get("SENTINEL_YUNMAI_MAPPING")
+        mappings = yunmai.validate(load_json(mapping_path)) if mapping_path else None
+        return {"deployment_mode": deploy["mode"], "public_origin": deploy["public_origin"],
+                "mapping_configured": mappings is not None,
+                "mapping_count": len(mappings["bindings"]) if mappings else 0,
+                "integration_mode": "manual_console_handoff", "cloud_connection_verified": False,
+                "automatic_response": False, "application_authentication": "local_bearer_token"}
+
+    @app.post("/api/cases/{ident}/yunmai-handoff")
+    def yunmai_handoff(ident: str):
+        mapping_path = os.environ.get("SENTINEL_YUNMAI_MAPPING")
+        if not mapping_path:
+            raise HTTPException(409, "服务端尚未配置 SENTINEL_YUNMAI_MAPPING，请先核验用户和应用映射")
+        item = get_case(ident)
+        draft = yunmai.handoff(item["analysis"], load_json(mapping_path), now_utc())
+        encoded = json.dumps(draft, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+        with handoff_lock:
+            directory = root / "handoffs"
+            if directory.is_symlink():
+                raise ValueError("handoff directory cannot be a symlink")
+            directory.mkdir(mode=0o700, exist_ok=True)
+            count, size = 0, len(encoded.encode("utf-8"))
+            for path in directory.glob("*.json"):
+                if path.is_symlink() or not path.is_file():
+                    raise ValueError("invalid handoff storage entry")
+                count += 1
+                size += path.stat().st_size
+                if count >= MAX_HANDOFF_FILES or size > MAX_HANDOFF_BYTES:
+                    raise HTTPException(409, "handoff storage limit reached; archive the workspace before continuing")
+            if size > MAX_HANDOFF_BYTES:
+                raise HTTPException(409, "handoff exceeds workspace storage budget")
+            atomic_write(directory / (draft["id"] + ".json"), encoded)
+        return draft
+
     @app.get("/api/cases")
     def cases():
         with db() as con:
-            rows = con.execute("SELECT id,at,analysis FROM cases ORDER BY at DESC LIMIT 100").fetchall()
-        return [{"id": x[0], "created_at": x[1], "incidents": len(json.loads(x[2])["incidents"])} for x in rows]
+            rows = con.execute("SELECT id,at,analysis FROM cases ORDER BY at DESC LIMIT 100")
+            return [{"id": x[0], "created_at": x[1], "incidents": len(json.loads(x[2])["incidents"])} for x in rows]
 
     @app.get("/api/cases/{ident}")
     def case(ident: str):
         return get_case(ident)
+
+    def worksheet_view(document):
+        return {**document, "summary": runbooks.summarize(document), "baseline_feedback": runbooks.feedback(document)}
+
+    def worksheets_for(ident):
+        with db() as con:
+            return [json.loads(r[0]) for r in con.execute(
+                "SELECT document FROM runbook_worksheets WHERE case_id=? ORDER BY incident_id", (ident,))]
+
+    def save_worksheet(con, ident, document):
+        encoded = canonical(document)
+        used = con.execute("SELECT coalesce(sum(length(cast(document as blob))),0) FROM runbook_worksheets WHERE case_id=? AND incident_id!=?",
+                           (ident, document["incident_id"])).fetchone()[0]
+        if used + len(encoded) > 2 * 1024 * 1024:
+            raise HTTPException(409, "investigation worksheet storage exceeds 2 MiB; archive this case")
+        con.execute("INSERT OR REPLACE INTO runbook_worksheets VALUES (?,?,?)",
+                    (ident, document["incident_id"], encoded.decode()))
+
+    @app.get("/api/runbooks")
+    def runbook_catalog():
+        return runbooks.catalog()
+
+    @app.get("/api/cases/{ident}/runbooks")
+    def case_runbooks(ident: str):
+        get_case(ident)
+        return {"worksheets": [worksheet_view(d) for d in worksheets_for(ident)]}
+
+    @app.post("/api/cases/{ident}/runbooks")
+    def start_runbook(ident: str, payload: RunbookStart):
+        item = get_case(ident)
+        document = runbooks.create(item["analysis"], payload.incident_id, payload.platform, now_utc())
+        with db() as con:
+            con.execute("BEGIN IMMEDIATE")
+            old = con.execute("SELECT document FROM runbook_worksheets WHERE case_id=? AND incident_id=?",
+                              (ident, payload.incident_id)).fetchone()
+            if old:
+                saved = json.loads(old[0])
+                if saved["platform"] != payload.platform:
+                    raise HTTPException(409, "worksheet platform is fixed; retain it and record applicability per check")
+                return worksheet_view(saved)
+            if con.execute("SELECT count(*) FROM runbook_worksheets WHERE case_id=?", (ident,)).fetchone()[0] >= 32:
+                raise HTTPException(409, "32 worksheets per case limit reached")
+            save_worksheet(con, ident, document)
+        return worksheet_view(document)
+
+    @app.post("/api/cases/{ident}/runbooks/{incident_id}/checks/{check_id}")
+    def review_runbook(ident: str, incident_id: str, check_id: str, payload: RunbookReview):
+        get_case(ident)
+        with db() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute("SELECT document FROM runbook_worksheets WHERE case_id=? AND incident_id=?",
+                              (ident, incident_id)).fetchone()
+            if not row:
+                raise HTTPException(404, "worksheet not found")
+            document = json.loads(row[0])
+            if payload.expected_revision != document["revision"]:
+                raise HTTPException(409, "记录已更新，请重新加载再保存；本次输入未写入")
+            if document["revision"] >= runbooks.MAX_REVISIONS:
+                raise HTTPException(409, "worksheet revision limit reached; archive this case")
+            updated = runbooks.review(document, check_id, payload.model_dump(), now_utc())
+            save_worksheet(con, ident, updated)
+        return worksheet_view(updated)
 
     @app.post("/api/demo")
     def run_demo():
@@ -174,28 +338,47 @@ def create_app(data_dir=None, token=None, testing=False):
         ev = [events.canonical_event(x, "synthetic-demo", i+1) for i, x in enumerate(rows)]
         return analyze_rows(ev, [intel.Indicator.parse(x) for x in ti], cfg)
 
+    @app.get("/api/behavior/models")
+    def behavior_models():
+        return {"models": baselines.catalog(), "mode": "reviewed_role_baselines", "ioc_required": False}
+
+    @app.get("/api/baselines/template")
+    def baseline_template():
+        return baselines.template(now_utc())
+
+    @app.post("/api/baselines/validate")
+    def baseline_validate(payload: BaselinePolicyInput):
+        cfg = policy.validate(payload.policy_config)
+        now = now_utc()
+        return {"valid": True, "policy_digest": digest(cfg),
+                "profiles": [{"name": name, "role": value["role"], "revision": value["revision"],
+                              "status": baselines.profile_status(value, now), "valid_until": value["valid_until"]}
+                             for name, value in cfg.get("behavior_baselines", {}).items()],
+                "bound_assets": sum(bool(a.get("baseline_profile")) for a in cfg["assets"].values()),
+                "exception_count": len(cfg.get("behavior_exceptions", [])),
+                "changes_applied": False}
+
+    @app.post("/api/demo/behavior")
+    def run_behavior_demo():
+        rows, cfg = behavior_demo.fixtures(now_utc())
+        ev = [events.canonical_event(x, "synthetic-behavior-demo", i+1) for i, x in enumerate(rows)]
+        return analyze_rows(ev, [], cfg)
+
     @app.post("/api/analyze")
     def analyze_input(payload: AnalysisInput):
-        cfg = payload.policy_config or demo.fixtures(now_utc())[2]
+        cfg = payload.policy_config if payload.policy_config is not None else {
+            "schema_version": 1, "assets": {}, "operators": []}
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "uploaded-events.jsonl"
             path.write_text(payload.events_text, encoding="utf-8")
             ev, manifest, stats = events.load_events([path], payload.format, payload.host)
-        result = analyze_rows(ev, [intel.Indicator.parse(x) for x in payload.indicators], cfg)
-        # Store provenance in both returned record and persisted analysis, then rebind plan digest.
-        result["analysis"]["input_manifest"] = manifest
-        result["analysis"]["statistics"].update(stats)
-        result["plan"] = engine.make_plan(result["analysis"], cfg, now_utc())
-        with db() as con:
-            con.execute("UPDATE cases SET analysis=?,plan=? WHERE id=?", (canonical(result["analysis"]).decode(),
-                        canonical(result["plan"]).decode(), result["id"]))
-        return result
+        return analyze_rows(ev, [intel.Indicator.parse(x) for x in payload.indicators], cfg, manifest, stats)
 
     @app.get("/api/cases/{ident}/report")
     def download_report(ident: str):
         item = get_case(ident)
         target = root / (ident + ".html")
-        report.render(item["analysis"], item["plan"], target)
+        report.render(item["analysis"], item["plan"], target, worksheets_for(ident))
         return FileResponse(target, filename="sentinel-zt-cttr-report.html", media_type="text/html")
 
     @app.get("/api/assets")
@@ -224,7 +407,7 @@ def create_app(data_dir=None, token=None, testing=False):
         return {"indexed": len(index["entries"])}
 
     @app.get("/api/knowledge/search")
-    def knowledge_search(q: str):
+    def knowledge_search(q: str = Query(min_length=1, max_length=512)):
         if not (root / "knowledge.json").exists():
             return {"results": [], "configured": False}
         return {"results": knowledge.search(load_json(root / "knowledge.json"), q), "configured": True}
@@ -236,6 +419,10 @@ def create_app(data_dir=None, token=None, testing=False):
         if os.environ.get("SENTINEL_PI_ENABLED") != "1":
             raise HTTPException(409, "Pi Agent 未启用，请配置模型凭证并设置 SENTINEL_PI_ENABLED=1")
         item = get_case(payload.case_id)
+        bridge_input = json.dumps({"question": payload.question,
+                                   "context": agent_context(item["analysis"], item["plan"])}, ensure_ascii=False)
+        if len(bridge_input.encode("utf-8")) > 512000:
+            raise HTTPException(413, "Pi context exceeds 512000 bytes; split the investigation")
         bridge = Path(__file__).resolve().parent.parent / "agent" / "bridge.mjs"
         # The optional model runtime does not inherit web, Quake or response secrets.
         allowed_env = {"PATH", "SYSTEMROOT", "WINDIR", "TMP", "TEMP", "TMPDIR",
@@ -247,12 +434,15 @@ def create_app(data_dir=None, token=None, testing=False):
         if model_key:
             allowed_env.add(model_key)
         child_env = {key: value for key, value in os.environ.items() if key in allowed_env}
+        if not agent_slot.acquire(blocking=False):
+            raise HTTPException(429, "Pi Agent is busy; retry later")
         try:
-            result = subprocess.run(["node", str(bridge)], input=json.dumps({"question": payload.question,
-                                    "context": agent_context(item["analysis"], item["plan"])}, ensure_ascii=False),
+            result = subprocess.run(["node", str(bridge)], input=bridge_input,
                                     text=True, capture_output=True, timeout=90, check=False, env=child_env)
         except (OSError, subprocess.TimeoutExpired):
             raise HTTPException(503, "Pi Agent 启动失败或超时，请检查本地 Node 和模型配置") from None
+        finally:
+            agent_slot.release()
         if result.returncode or len(result.stdout) > 1_000_000:
             raise HTTPException(503, "Pi Agent 调用失败，请检查模型与凭证配置；未执行处置")
         try:

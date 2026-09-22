@@ -2,13 +2,16 @@
 import html
 import json
 from .common import atomic_write
+from . import runbooks
+
+MAX_REPORT_BYTES = 32 * 1024 * 1024
 
 
 def esc(value):
     return html.escape(str(value), quote=True)
 
 
-def render(analysis, plan, destination):
+def render(analysis, plan, destination, worksheets=()):
     counts = analysis["statistics"]
     incidents = analysis["incidents"]
     cards, rows = [], []
@@ -20,15 +23,20 @@ def render(analysis, plan, destination):
           <div class="track"><i style="width:{case['risk']}%"></i></div>
           <p>{esc(rules)}</p><p class="muted">{len(case['evidence_ids'])} 条关联证据 · 待分析员核验</p></article>''')
     event_map = {e["id"]: e for e in analysis["events"]}
+    evidence_bytes = 0
     for f in analysis["findings"]:
         evidence = [event_map[e] for e in f["evidence_ids"]]
+        baseline = ('<h4>行为基线偏离</h4><pre>' + esc(json.dumps(f["baseline"], ensure_ascii=False, indent=2)) + '</pre>') if f.get("baseline") else ''
         rows.append(f'''<details class="finding"><summary><span class="code">{esc(f['rule_id'])}</span>
           <strong>{esc(f['title'])}</strong><span class="finding-host">{esc(f['host'])}</span>
           <b>{f['score']}</b></summary><div class="detail"><p>{esc(f['rationale'])}</p>
           <p class="muted">误报场景：{esc(f['false_positives'])}</p>
           <p>ATT&amp;CK：{esc(', '.join(f['attack']) or '未映射')} · {esc(f['verdict'])}</p>
           <h4>证据与来源</h4><pre>{esc(json.dumps(evidence, ensure_ascii=False, indent=2))}</pre>
-          <h4>情报匹配</h4><pre>{esc(json.dumps(f['intel'], ensure_ascii=False, indent=2))}</pre></div></details>''')
+          <h4>情报匹配</h4><pre>{esc(json.dumps(f['intel'], ensure_ascii=False, indent=2))}</pre>{baseline}</div></details>''')
+        evidence_bytes += len(rows[-1].encode("utf-8"))
+        if evidence_bytes > MAX_REPORT_BYTES:
+            raise ValueError("report exceeds 32 MiB; split the investigation")
     action_rows = []
     for a in plan["actions"]:
         state = "需签名授权" if a["executable"] else "人工处理"
@@ -61,9 +69,25 @@ main{max-width:1216px;padding:30px 28px 56px;margin:auto}.metrics{display:grid;g
     content += '<div class="section-title"><h2>资产研判</h2><span class="muted">风险分数为启发式排序，不是失陷概率</span></div><div class="cases">' + ''.join(cards) + '</div>'
     if not cards:
         content += '<p>未发现符合当前规则的异常；请同时检查日志覆盖率和排除统计。</p>'
+    baseline_context = analysis.get("behavior_baseline")
+    if baseline_context:
+        content += '<div class="section-title"><h2>资产角色与基线覆盖</h2><span class="muted">无需 IOC；覆盖缺口不能解释为安全</span></div><pre>' + esc(json.dumps(
+            {"assets": baseline_context["assets"], "exceptions_applied": baseline_context["exceptions_applied"]},
+            ensure_ascii=False, indent=2)) + '</pre>'
     content += '<div class="section-title"><h2>行为与情报证据</h2><span class="muted">展开查看规则解释、误报场景和原始字段</span></div>' + ''.join(rows)
     content += '<div class="section-title"><h2>响应计划</h2><span class="muted">此报告没有执行任何处置</span></div><div class="table-wrap"><table><thead><tr><th>资产</th><th>动作</th><th>范围 / 下一步</th><th>状态</th></tr></thead><tbody>' + ''.join(action_rows) + '</tbody></table></div>'
+    content += '<div class="section-title"><h2>调查手册与复核记录</h2><span class="muted">检查进度不等于安全证明；不会修改处置权限</span></div>'
+    for case in incidents:
+        titles = [r['title'] for r in runbooks.recommend(case)]
+        content += '<p>' + esc(case['host']) + '：' + esc('；'.join(titles)) + '</p>'
+    if not worksheets:
+        content += '<p class="muted">尚无人工复核记录。可在应急手册页确认系统类型后建立调查清单。</p>'
+    for worksheet in worksheets:
+        summary = runbooks.summarize(worksheet)
+        content += '<details class="finding"><summary>' + esc(worksheet['host']) + ' · 复核版次 ' + esc(worksheet['revision']) + ' · 待补证 ' + esc(summary['unresolved']) + '</summary><div class="detail"><pre>' + esc(json.dumps(worksheet, ensure_ascii=False, indent=2)) + '</pre><h4>待审核基线复盘建议</h4><pre>' + esc(json.dumps(runbooks.feedback(worksheet), ensure_ascii=False, indent=2)) + '</pre></div></details>'
     content += '<div class="note">零信任访问判定需由接入网关执行；本地防火墙适配器仅对指定对端实施有时限的入站、出站封禁。域名命中不自动扩展为整个云服务商封禁。</div>'
     content += f'<details><summary>数据质量与排除统计</summary><pre>{esc(json.dumps({"events":counts,"intel":analysis["intel_ignored"],"warnings":analysis.get("warnings",[])},ensure_ascii=False,indent=2))}</pre></details>'
-    content += f'<footer>生成时间：{esc(analysis["generated_at"])}<br>策略摘要：{esc(analysis["policy_digest"])}<br>Sentinel-ZT-CTTR 0.1.0 · 本地离线报告 · 日志可能含敏感字段，请按事件材料管理。</footer></main></body></html>'
+    content += f'<footer>生成时间：{esc(analysis["generated_at"])}<br>策略摘要：{esc(analysis["policy_digest"])}<br>Sentinel-ZT-CTTR 0.4.0 · 本地离线报告 · 日志可能含敏感字段，请按事件材料管理。</footer></main></body></html>'
+    if len(content.encode("utf-8")) > MAX_REPORT_BYTES:
+        raise ValueError("report exceeds 32 MiB; split the investigation")
     atomic_write(destination, content)

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "operators": [],
+  "suppressions": [],
+  "behavior_exceptions": [],
+  "protected_networks": [
+    "127.0.0.0/8",
+    "::1/128"
+  ],
+  "assets": {
+    "workstation-example": {
+      "ips": [
+        "192.0.2.10"
+      ],
+      "role": "workstation",
+      "baseline_profile": "workstation",
+      "response_enabled": false,
+      "criticality": "normal",
+      "permissions": {}
+    }
+  },
+  "behavior_baselines": {
+    "workstation": {
+      "enabled": false,
+      "revision": "review-1",
+      "role": "workstation",
+      "reviewed_by": "REPLACE-WITH-REVIEWER",
+      "valid_from": "2026-09-21T05:26:51.625450Z",
+      "valid_until": "2026-10-21T05:26:51.625450Z",
+      "network": {
+        "internal_networks": [
+          "192.0.2.0/24"
+        ],
+        "remote_ports": [
+          22,
+          135,
+          139,
+          445,
+          3389,
+          5900,
+          5985,
+          5986
+        ],
+        "allowed_flows": [],
+        "fanout_window_seconds": 300,
+        "fanout_threshold": 3
+      },
+      "identity": {
+        "allowed_changes": []
+      },
+      "privilege": {
+        "allowed_transitions": []
+      }
+    }
+  }
+}

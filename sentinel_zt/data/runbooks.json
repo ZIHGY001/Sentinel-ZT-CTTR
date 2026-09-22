@@ -1,0 +1,553 @@
+{
+  "schema_version": 1,
+  "version": "2026.09.22.1",
+  "sources": [
+    {
+      "id": "nop-checks",
+      "title": "NOP Team · Linux 应急响应手册 / 常规安全检查",
+      "url": "https://book.noptrace.com/linux/12.%E5%B8%B8%E8%A7%84%E5%AE%89%E5%85%A8%E6%A3%80%E6%9F%A5/",
+      "repository": "https://github.com/Just-Hack-For-Fun/Linux-INCIDENT-RESPONSE-COOKBOOK",
+      "repository_revision": "480a9c88364f6deef97de25d5ad88ae29f94a930",
+      "license_observed": "GPL-3.0 (repository)",
+      "content_revision": "online page, not commit-pinned",
+      "accessed_on": "2026-09-22",
+      "integration": "reference_link_only"
+    },
+    {
+      "id": "notes-linux",
+      "title": "Bypass007 · Linux 入侵排查",
+      "url": "https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC01%E7%AB%A0%EF%BC%9A%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5%E7%AF%87/%E7%AC%AC2%E7%AF%87%EF%BC%9ALinux%20%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5.md",
+      "repository": "https://github.com/Bypass007/Emergency-Response-Notes",
+      "repository_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "license_observed": "no license detected in repository metadata",
+      "content_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "accessed_on": "2026-09-22",
+      "integration": "reference_link_only"
+    },
+    {
+      "id": "notes-logs",
+      "title": "Bypass007 · Linux 日志分析",
+      "url": "https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC02%E7%AB%A0%EF%BC%9A%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%AF%87/%E7%AC%AC2%E7%AF%87%EF%BC%9ALinux%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90.md",
+      "repository": "https://github.com/Bypass007/Emergency-Response-Notes",
+      "repository_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "license_observed": "no license detected in repository metadata",
+      "content_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "accessed_on": "2026-09-22",
+      "integration": "reference_link_only"
+    },
+    {
+      "id": "notes-ssh",
+      "title": "Bypass007 · SSH 暴力破解",
+      "url": "https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC05%E7%AB%A0%EF%BC%9ALinux%E5%AE%9E%E6%88%98%E7%AF%87/%E7%AC%AC1%E7%AF%87%EF%BC%9ASSH%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3.md",
+      "repository": "https://github.com/Bypass007/Emergency-Response-Notes",
+      "repository_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "license_observed": "no license detected in repository metadata",
+      "content_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "accessed_on": "2026-09-22",
+      "integration": "reference_link_only"
+    },
+    {
+      "id": "notes-web",
+      "title": "Bypass007 · 网站被植入 Webshell",
+      "url": "https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC06%E7%AB%A0%EF%BC%9AWeb%E5%AE%9E%E6%88%98%E7%AF%87/%E7%AC%AC1%E7%AF%87%EF%BC%9A%E7%BD%91%E7%AB%99%E8%A2%AB%E6%A4%8D%E5%85%A5Webshell.md",
+      "repository": "https://github.com/Bypass007/Emergency-Response-Notes",
+      "repository_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "license_observed": "no license detected in repository metadata",
+      "content_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "accessed_on": "2026-09-22",
+      "integration": "reference_link_only"
+    },
+    {
+      "id": "notes-windows",
+      "title": "Bypass007 · Windows 入侵排查",
+      "url": "https://github.com/Bypass007/Emergency-Response-Notes/blob/693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b/%E7%AC%AC01%E7%AB%A0%EF%BC%9A%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5%E7%AF%87/%E7%AC%AC1%E7%AF%87%EF%BC%9AWindows%20%E5%85%A5%E4%BE%B5%E6%8E%92%E6%9F%A5.md",
+      "repository": "https://github.com/Bypass007/Emergency-Response-Notes",
+      "repository_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "license_observed": "no license detected in repository metadata",
+      "content_revision": "693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b",
+      "accessed_on": "2026-09-22",
+      "integration": "reference_link_only"
+    }
+  ],
+  "runbooks": [
+    {
+      "id": "IR-CORE",
+      "title": "调查范围、证据与恢复",
+      "platform": "any",
+      "always": true,
+      "rule_ids": [],
+      "checks": [
+        {
+          "id": "IR-001",
+          "title": "核实资产与事件范围",
+          "objective": "联系资产负责人，确认授权范围、业务影响、主机身份和系统类型。",
+          "evidence_required": [
+            "资产登记与负责人确认",
+            "告警原始记录和变更单"
+          ],
+          "interpretation": "日志中的主机标签不证明资产归属；角色来自已审核登记。平台不根据进程名猜测操作系统。",
+          "commands": [],
+          "source_ids": [
+            "notes-linux",
+            "notes-windows"
+          ],
+          "baseline_feedback": "核对资产角色、重要性、责任人与受保护管理路径。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "IR-002",
+          "title": "建立可核对的时间线",
+          "objective": "记录时区、时钟偏差和日志覆盖时段，对齐告警、身份、网络及应用记录。",
+          "evidence_required": [
+            "带时区的原始时间戳",
+            "采集时间、来源、日志轮转与缺口",
+            "保全副本及其 SHA256"
+          ],
+          "interpretation": "日志缺失、history 空白或文件时间接近，均不能单独证明未入侵或确定攻击时间。",
+          "commands": [],
+          "source_ids": [
+            "notes-logs",
+            "notes-web"
+          ],
+          "baseline_feedback": "审核日志留存、时间同步、必填字段与缺失遥测提醒。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "IR-003",
+          "title": "确定最小处置范围",
+          "objective": "保全短暂证据后，确认用户、应用和管理通道，制定有时限的处置与回滚步骤。",
+          "evidence_required": [
+            "当前会话或连接证据",
+            "审批记录、业务联系人和回滚条件"
+          ],
+          "interpretation": "检查清单不构成授权；云脉交接限制用户到应用访问，不等同于主机隔离。",
+          "commands": [],
+          "source_ids": [
+            "notes-linux",
+            "notes-windows"
+          ],
+          "baseline_feedback": "复核应急用户到应用绑定、审批期限和管理通道保护。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "IR-004",
+          "title": "验证恢复并提出基线复盘",
+          "objective": "核验入口修复、凭据处置和业务恢复，观察是否再次出现同类偏离。",
+          "evidence_required": [
+            "修复与恢复记录",
+            "处置后日志及业务验收",
+            "复测时段和仍缺失的证据"
+          ],
+          "interpretation": "未复现告警只描述当前观察窗口；不能宣告系统永久安全。恶意行为不能登记为正常基线。",
+          "commands": [],
+          "source_ids": [
+            "notes-web",
+            "notes-windows"
+          ],
+          "baseline_feedback": "将已确认的正常路径和恶意偏离分别交给基线负责人审核；不自动放行。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    },
+    {
+      "id": "IR-LINUX",
+      "title": "Linux 主机排查",
+      "platform": "linux",
+      "always": true,
+      "rule_ids": [],
+      "checks": [
+        {
+          "id": "LX-001",
+          "title": "核验账户与权限变更",
+          "objective": "对照账户清单和工单检查新账户、特权组、sudo 授权及 SSH 公钥变化。",
+          "evidence_required": [
+            "账户与授权配置的可信基线差异",
+            "SSH 公钥指纹、所有者和变更记录",
+            "身份或 sudo 审计"
+          ],
+          "interpretation": "服务账户和备份操作需与业务核对；不以密码哈希格式推断可远程登录，不采集私钥或 shadow 内容。",
+          "commands": [
+            "getent passwd",
+            "getent group"
+          ],
+          "source_ids": [
+            "nop-checks",
+            "notes-linux"
+          ],
+          "baseline_feedback": "复核 B103/B104 允许的操作者、目标身份、权限和提权程序；密钥变化纳入变更审计。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "LX-002",
+          "title": "区分 SSH 尝试、成功登录与后续行为",
+          "objective": "在限定时段关联失败、成功认证、来源、账户和登录后的行为。",
+          "evidence_required": [
+            "sshd/auth.log/secure 或集中认证日志",
+            "登录来源与账户",
+            "登录后的命令审计或网络记录"
+          ],
+          "interpretation": "失败次数和 SYN_RECV 连接都不能证明成功入侵；last 只反映可用的本机登录记录。",
+          "commands": [
+            "last -F -n 30",
+            "journalctl --no-pager -u sshd -u ssh --since \"1 hour ago\" -n 200"
+          ],
+          "source_ids": [
+            "notes-ssh",
+            "notes-logs"
+          ],
+          "baseline_feedback": "审核远程登录入口、允许来源、MFA 与认证日志覆盖。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "LX-003",
+          "title": "检查定时任务与服务定义",
+          "objective": "对照发行版和用户范围，核查 cron、at、systemd 服务、定时器及用户级单元。",
+          "evidence_required": [
+            "任务或 unit 原文的保全副本",
+            "执行主体、程序路径与变更工单",
+            "对应执行日志"
+          ],
+          "interpretation": "当前用户的 crontab 不能代表所有用户；一次列表为空也不能排除其他调度机制。",
+          "commands": [
+            "crontab -l",
+            "atq",
+            "systemctl --no-pager list-timers --all",
+            "systemctl --no-pager list-unit-files --type=service"
+          ],
+          "source_ids": [
+            "nop-checks",
+            "notes-linux"
+          ],
+          "baseline_feedback": "登记批准任务的用户、程序、触发时段与变更流程；完善持久化遥测。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "LX-004",
+          "title": "检查非典型自动执行入口",
+          "objective": "在保全副本中比对启动脚本、shell profile、udev 规则和 Python .pth 文件。",
+          "evidence_required": [
+            "发行版对应配置路径与所有者",
+            "与可信镜像或配置库的内容差异",
+            "变更审计与执行证据"
+          ],
+          "interpretation": "文件存在或带可执行权限不等于后门；不要启动可疑解释器、source 配置或 import 可疑模块来检查。",
+          "commands": [],
+          "source_ids": [
+            "nop-checks"
+          ],
+          "baseline_feedback": "将这些配置纳入完整性监控；现有引擎没有覆盖全部入口的自动检测器。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "LX-005",
+          "title": "核验动态加载与认证组件",
+          "objective": "对照可信包与配置，检查预加载配置、PAM 配置及相关库文件。",
+          "evidence_required": [
+            "ld.so.preload、PAM 配置的保全副本",
+            "库文件哈希及可信包来源",
+            "配置变更记录"
+          ],
+          "interpretation": "在疑似被篡改系统上，工具输出可能不可信；不调用 ldd 或执行可疑程序作验证。",
+          "commands": [],
+          "source_ids": [
+            "nop-checks"
+          ],
+          "baseline_feedback": "建立认证组件和加载配置的完整性基线，异常时改用可信环境复核。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "LX-006",
+          "title": "复核工具、内核与软件包可信度",
+          "objective": "交叉比对进程可见性、模块清单及软件包文件与外部可信镜像。",
+          "evidence_required": [
+            "进程快照与端点/虚拟化侧交叉证据",
+            "模块与软件包清单",
+            "独立可信包或镜像哈希"
+          ],
+          "interpretation": "容器、权限和进程退出会造成视图差异；本机包数据库也可能受影响，单次差异不能确认 rootkit。",
+          "commands": [
+            "ps -eo pid,ppid,user,lstart,comm --sort=pid",
+            "lsmod"
+          ],
+          "source_ids": [
+            "nop-checks",
+            "notes-linux"
+          ],
+          "baseline_feedback": "审核可信工具来源、镜像版本、内核模块审批和采集权限覆盖。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    },
+    {
+      "id": "IR-WINDOWS",
+      "title": "Windows 主机排查",
+      "platform": "windows",
+      "always": true,
+      "rule_ids": [],
+      "checks": [
+        {
+          "id": "WN-001",
+          "title": "核验本地与域账户变更",
+          "objective": "对照身份系统和变更单检查新增账号、管理员成员、登录授权与权限变更。",
+          "evidence_required": [
+            "本地或域身份审计",
+            "管理员组变更记录",
+            "批准工单"
+          ],
+          "interpretation": "本地账户清单不覆盖域账户；组名可能本地化，需由管理员确认。",
+          "commands": [
+            "Get-LocalUser"
+          ],
+          "source_ids": [
+            "notes-windows"
+          ],
+          "baseline_feedback": "复核身份变更基线与本地/域身份源覆盖。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "WN-002",
+          "title": "核查服务、任务与启动入口",
+          "objective": "比较批准的服务路径、计划任务和启动配置，关联创建主体与执行过程。",
+          "evidence_required": [
+            "任务定义、服务配置及原始日志",
+            "安装/升级工单",
+            "可执行文件签名与哈希"
+          ],
+          "interpretation": "合法升级也会创建服务；不要仅凭服务名或文件签名判定安全。",
+          "commands": [
+            "Get-ScheduledTask",
+            "Get-CimInstance Win32_Service | Select-Object Name,State,StartMode,PathName"
+          ],
+          "source_ids": [
+            "notes-windows"
+          ],
+          "baseline_feedback": "审核启动项变更、服务创建和计划任务日志留存。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "WN-003",
+          "title": "关联登录、进程和日志完整性",
+          "objective": "保全事件日志，用会话与进程标识核对登录、特权使用及执行关系。",
+          "evidence_required": [
+            "Security 与 System 日志的原始导出",
+            "可用的 Sysmon/EDR 记录",
+            "审计配置和日志缺口"
+          ],
+          "interpretation": "事件编号需要结合字段解释；工作台只接收约定的 JSONL，不直接导入 EVTX。",
+          "commands": [
+            "Get-WinEvent -FilterHashtable @{LogName=\"Security\"; Id=4624,4625,4672,4688,1102} -MaxEvents 100"
+          ],
+          "source_ids": [
+            "notes-windows"
+          ],
+          "baseline_feedback": "明确审计策略、日志格式转换和命令行字段的隐私范围。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    },
+    {
+      "id": "IR-WEB",
+      "title": "Web 异常执行与文件落地",
+      "platform": "any",
+      "always": false,
+      "rule_ids": [
+        "B002",
+        "B006",
+        "B008",
+        "B009",
+        "B010",
+        "B014",
+        "B015",
+        "C002"
+      ],
+      "checks": [
+        {
+          "id": "WB-001",
+          "title": "核对请求是否产生实际影响",
+          "objective": "对齐应用、代理和认证日志，定位请求对应的处理结果及执行主体。",
+          "evidence_required": [
+            "访问日志与应用审计",
+            "请求标识、账户和服务进程关系",
+            "部署与变更记录"
+          ],
+          "interpretation": "HTTP 200、SQL 关键字或脚本扩展名只是线索；缺少落地或执行证据时保留不确定性。",
+          "commands": [],
+          "source_ids": [
+            "notes-web"
+          ],
+          "baseline_feedback": "完善请求标识、真实认证结果和服务父子进程遥测。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "WB-002",
+          "title": "核查落地文件与服务执行",
+          "objective": "对比可信发布清单，保全可疑文件和元数据，将写入与执行证据关联。",
+          "evidence_required": [
+            "文件保全副本、哈希和元数据",
+            "可信发布清单",
+            "文件写入及服务子进程日志"
+          ],
+          "interpretation": "文件时间可以被更改；禁止为验证而访问可疑脚本、运行文件或下载查杀程序。",
+          "commands": [],
+          "source_ids": [
+            "notes-web"
+          ],
+          "baseline_feedback": "隔离上传存储与执行目录，审核应用合法子进程和发布路径。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    },
+    {
+      "id": "IR-LATERAL",
+      "title": "横向访问与路径偏离",
+      "platform": "any",
+      "always": false,
+      "rule_ids": [
+        "B016",
+        "B101",
+        "B102",
+        "C101",
+        "C003"
+      ],
+      "checks": [
+        {
+          "id": "LM-001",
+          "title": "核验连接身份与业务路径",
+          "objective": "核对源资产地址、目标资产、端口、协议及账户，回查跳板机与变更单。",
+          "evidence_required": [
+            "两端或网关连接日志",
+            "登记的资产 IP 与角色",
+            "跳板路径及授权记录"
+          ],
+          "interpretation": "端口访问不证明远程执行；NAT、共享 IP 和扫描器会改变源身份解释。",
+          "commands": [],
+          "source_ids": [
+            "notes-linux",
+            "notes-ssh"
+          ],
+          "baseline_feedback": "复核 B101/B102 的正常目的网段、端口、协议及扇出门槛。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "LM-002",
+          "title": "复核同账户行为链",
+          "objective": "检查权限变化后是否由同一活动账户访问新目标，核对先后顺序和时间窗。",
+          "evidence_required": [
+            "身份变更主体、结果和时间",
+            "连接用户与目标",
+            "目标侧登录或执行记录"
+          ],
+          "interpretation": "时间关联不是因果证明；账户字段缺失或结果未知时，应标记证据缺口。",
+          "commands": [],
+          "source_ids": [
+            "notes-logs",
+            "notes-windows"
+          ],
+          "baseline_feedback": "完善 C101 所需主体与成功结果字段，评审应急访问期限。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    },
+    {
+      "id": "IR-PRIVILEGE",
+      "title": "异常授权与凭据访问",
+      "platform": "any",
+      "always": false,
+      "rule_ids": [
+        "B005",
+        "B007",
+        "B013",
+        "B103",
+        "B104",
+        "C101"
+      ],
+      "checks": [
+        {
+          "id": "PR-001",
+          "title": "核对权限变更的真实结果",
+          "objective": "对照身份提供方、目标系统及审批单，核验操作者、目标账户与最终权限。",
+          "evidence_required": [
+            "权限变更成功/失败结果",
+            "原始操作者与目标权限",
+            "审批单和同步任务记录"
+          ],
+          "interpretation": "申请或尝试不能当作授权成功；身份同步延迟和应急工单也需要复核。",
+          "commands": [],
+          "source_ids": [
+            "notes-linux",
+            "notes-windows"
+          ],
+          "baseline_feedback": "只把经批准的精确授权组合提交基线评审，禁止宽泛允许。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "PR-002",
+          "title": "评估凭据暴露与会话影响",
+          "objective": "确认可疑读取是否成功以及会话影响范围，提出凭据轮换和访问复核任务。",
+          "evidence_required": [
+            "访问审计与可信授权结果",
+            "会话/凭据责任人",
+            "轮换和回滚审批记录"
+          ],
+          "interpretation": "保留访问证据即可，不上传私钥、密码、令牌原文；轮换可能影响业务，需要独立审批。",
+          "commands": [],
+          "source_ids": [
+            "nop-checks",
+            "notes-windows"
+          ],
+          "baseline_feedback": "审核工作负载凭据最小权限、会话期限及敏感访问记录。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    },
+    {
+      "id": "IR-CONNECTION",
+      "title": "异常外联与进程核验",
+      "platform": "any",
+      "always": false,
+      "rule_ids": [
+        "B018",
+        "I001",
+        "C001"
+      ],
+      "checks": [
+        {
+          "id": "NW-001",
+          "title": "区分恶意外联与正常轮询",
+          "objective": "核对目标、时间、服务用途、所属进程及威胁情报的时效。",
+          "evidence_required": [
+            "多次连接的原始记录",
+            "进程与业务归属",
+            "情报来源、观测时间和有效期"
+          ],
+          "interpretation": "周期心跳、共享云地址及旧情报都可能误报；不自动将域名扩展成整段网络封禁。",
+          "commands": [],
+          "source_ids": [
+            "notes-linux"
+          ],
+          "baseline_feedback": "审核批准的外联路径和监控心跳，并持续更新情报时效。",
+          "execution": "manual_reference_only"
+        },
+        {
+          "id": "NW-002",
+          "title": "保全短连接与进程上下文",
+          "objective": "对照端点、网关和进程快照，补充短暂连接和已退出进程的历史记录。",
+          "evidence_required": [
+            "网络历史日志或已有抓包",
+            "进程创建与父子关系",
+            "业务归属和资源监测"
+          ],
+          "interpretation": "实时快照会遗漏已退出进程；CPU 占用高、未知进程或缺少 PID 不能单独证明挖矿或后门。",
+          "commands": [],
+          "source_ids": [
+            "notes-linux"
+          ],
+          "baseline_feedback": "补齐历史进程与网络数据；新的采集或抓包必须另行授权和控制范围。",
+          "execution": "manual_reference_only"
+        }
+      ]
+    }
+  ],
+  "notice": "原创调查检查清单与来源链接；未打包第三方正文、脚本或样本。命令只供人工参考，无执行接口。",
+  "command_notice": "在已授权目标及可信工具环境中人工使用。命令可能需要额外权限或发行版工具；只读查询仍会产生日志，可能暴露敏感字段。固定命令的时间窗仅为示例，不能代表完整调查覆盖。"
+}

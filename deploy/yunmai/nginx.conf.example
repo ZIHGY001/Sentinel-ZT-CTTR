@@ -1,0 +1,36 @@
+# Include from nginx's http context after replacing ALL example addresses/names.
+# Publish only this HTTPS endpoint through the Yunmai application connector.
+server {
+    listen 192.0.2.10:443 ssl;
+    server_name ir.example.test;
+    if ($host != ir.example.test) { return 444; }
+
+    ssl_certificate /etc/sentinel-zt-cttr/tls/fullchain.pem;
+    ssl_certificate_key /etc/sentinel-zt-cttr/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # EXAMPLE ONLY. Verify the actual observed connector source/NAT addresses.
+    # Do not replace this with all RFC1918 networks or allow all.
+    allow 192.0.2.20;
+    deny all;
+    client_max_body_size 8m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header Connection "";
+        proxy_set_header Forwarded "";
+        proxy_set_header X-Forwarded-For "";
+        proxy_set_header X-Forwarded-Host "";
+        proxy_set_header X-Forwarded-Proto "";
+        proxy_set_header X-SASE-User "";
+        proxy_set_header X-SASE-Device "";
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 100s;
+        proxy_send_timeout 100s;
+        proxy_cache off;
+    }
+}

@@ -19,3 +19,12 @@ Original code is MIT. Dependencies retain their own licenses; installing this re
 | [Suricata EVE documentation](https://docs.suricata.io/en/latest/output/eve/eve-json-output.html) | Network telemetry adapter |
 
 Public packages intentionally contain no original operational reports, personal rosters, private IOCs, customer topology or screenshots from those reports. Original research material was used to identify generic defensive behavior categories. Supplied examples use documentation address ranges and reserved example domains.
+
+Yunmai integration is based on user-supplied connection and client SDK documentation. Proprietary SDK binaries, document contents, tenant enrollment links and embedded example credentials are excluded. The original handoff schema is not a vendor management API or vendor import format. Cloud service and SDK rights remain with their respective owners.
+
+## Investigation references added in v0.4.0
+
+- NOP Team [Linux-INCIDENT-RESPONSE-COOKBOOK](https://github.com/Just-Hack-For-Fun/Linux-INCIDENT-RESPONSE-COOKBOOK), repository revision `480a9c88364f6deef97de25d5ad88ae29f94a930`, repository license GPL-3.0. Its linked online manual was consulted on 2026-09-22; online content is not pinned by the repository commit.
+- Bypass007 [Emergency-Response-Notes](https://github.com/Bypass007/Emergency-Response-Notes), revision `693478ca87b30ff8f01fcb7ee9cb0a4dd07e492b`. No license was detected in repository metadata at review time; this is not treated as permission to redistribute its contents.
+
+The packaged catalog contains independently written defensive investigation steps, metadata and source links. It does not bundle either manual, upstream code, PDFs, malware samples or screenshots. Upstream rights remain separate from this project's MIT license. Runtime catalog access is offline and does not fetch or execute referenced content.
