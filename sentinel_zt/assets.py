@@ -9,7 +9,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
 
-from .common import canonical, digest, integer, iso, timestamp
+from .common import canonical, digest, integer, ip_literal, iso, strict_json, timestamp
 from .intel import normalize
 
 QUAKE_ENDPOINT = "https://quake.360.net/api/v3/search/quake_service"
@@ -21,6 +21,11 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def scope_config(scope):
+    if not isinstance(scope, dict) or any(not isinstance(scope.get(k, []), list)
+                                          for k in ("networks", "domains")):
+        raise ValueError("scope networks and domains must be arrays")
+    if any(not isinstance(x, str) for x in scope.get("networks", [])):
+        raise ValueError("scope networks must contain CIDR strings")
     networks = [ipaddress.ip_network(x, strict=False) for x in scope.get("networks", [])]
     domains = [normalize("domain", x) for x in scope.get("domains", [])]
     if not networks and not domains:
@@ -64,7 +69,7 @@ def quake_page(payload, token, timeout=20):
         raise ValueError("QUAKE_API_KEY is missing or invalid")
     req = urllib.request.Request(QUAKE_ENDPOINT, data=canonical(payload), method="POST",
                                  headers={"Content-Type": "application/json", "X-QuakeToken": token,
-                                          "User-Agent": "Sentinel-ZT-CTTR/0.1.0"})
+                                          "User-Agent": "Sentinel-ZT-CTTR/0.4.0"})
     opener = urllib.request.build_opener(NoRedirect())
     for attempt in range(3):
         try:
@@ -72,7 +77,7 @@ def quake_page(payload, token, timeout=20):
                 raw = response.read(8 * 1024 * 1024 + 1)
             if len(raw) > 8 * 1024 * 1024:
                 raise ValueError("Quake response size limit exceeded")
-            return json.loads(raw)
+            return strict_json(raw)
         except urllib.error.HTTPError as exc:
             if exc.code in {429, 502, 503, 504} and attempt < 2:
                 time.sleep(2 ** attempt)
@@ -112,9 +117,11 @@ def service_domains(record):
 def normalize_assets(records, scope, now, config=None):
     networks, domains = scope_config(scope)
     assets, rejected, warnings = {}, 0, []
+    hosts_by_ip = {ip: host for host, asset in (config or {}).get("assets", {}).items()
+                   for ip in asset.get("ips", [])}
     for number, row in enumerate(records):
         try:
-            ip = ipaddress.ip_address(row["ip"])
+            ip = ip_literal(row["ip"])
             port = integer(row["port"], 1, 65535)
             found_domains = service_domains(row)
             in_network = any(ip in n for n in networks)
@@ -135,8 +142,7 @@ def normalize_assets(records, scope, now, config=None):
                 components = []
             products = sorted(set(str(x.get("product_name_en") or x.get("product_name_cn") or x.get("product_name") or "")
                                   for x in components if isinstance(x, dict)) - {""})
-            known = next((host for host, asset in (config or {}).get("assets", {}).items()
-                          if str(ip) in asset.get("ips", [])), None)
+            known = hosts_by_ip.get(str(ip))
             item = {"id": "asset-" + digest(key)[:20], "ip": str(ip), "port": port, "transport": transport,
                     "domains": found_domains, "service": str(service.get("name", "")), "products": products,
                     "title": str(service.get("http", {}).get("title", ""))[:500], "observed_at": observed,
@@ -167,7 +173,7 @@ def search(query, scope, now, config=None, limit=100, page_size=50, fetcher=quak
         size = min(page_size, limit-start)
         payload = {"query": query, "start": start, "size": size, "latest": True, "ignore_cache": False}
         page = fetcher(payload, token)
-        if page.get("code") not in (0, "0"):
+        if not isinstance(page, dict) or page.get("code") not in (0, "0"):
             raise ValueError("Quake API rejected the request; check syntax, permissions and quota")
         batch = page.get("data")
         if not isinstance(batch, list):
@@ -197,8 +203,10 @@ def asset_diff(before, after):
 
 def enrich(analysis, snapshot, config, now):
     context = []
+    hosts_by_ip = {ip: host for host, asset in config["assets"].items() for ip in asset.get("ips", [])}
+    by_host = {}
     for item in snapshot.get("assets", []):
-        host = next((name for name, a in config["assets"].items() if item.get("ip") in a.get("ips", [])), None)
+        host = hosts_by_ip.get(item.get("ip"))
         if not host:
             continue
         observed = item.get("observed_at")
@@ -208,7 +216,8 @@ def enrich(analysis, snapshot, config, now):
         except (ValueError, TypeError):
             current = False
         context.append({**item, "registered_host": host, "recent_observation": current})
+        by_host.setdefault(host, []).append(item["id"])
     analysis["asset_context"] = context
     # Discovery affects analyst context only. It cannot itself raise execution eligibility.
     for incident in analysis["incidents"]:
-        incident["exposure_context"] = [x["id"] for x in context if x["registered_host"] == incident["host"]]
+        incident["exposure_context"] = by_host.get(incident["host"], [])

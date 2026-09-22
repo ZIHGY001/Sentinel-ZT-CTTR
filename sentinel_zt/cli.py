@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import __version__
 from .common import digest, load_json, now_utc, timestamp, write_json, read_bytes
-from . import assets, collect, demo, engine, events, intel, knowledge, policy, report, response
+from . import assets, baselines, behavior_demo, collect, demo, engine, events, intel, knowledge, policy, report, response, runbooks, yunmai
 
 
 def run_analysis(inputs, intel_paths, config, destination, at, fmt="canonical", host=None, asset_snapshot=None, kb=None):
@@ -45,6 +45,18 @@ def parser():
     sub = p.add_subparsers(dest="command", required=True)
     d = sub.add_parser("demo", help="generate and analyze synthetic training events")
     d.add_argument("--out", default="output/demo")
+    bd = sub.add_parser("behavior-demo", help="run reviewed role baselines without any IOC or PoC")
+    bd.add_argument("--out", default="output/behavior-demo")
+    bt = sub.add_parser("baseline-template", help="write a disabled policy template for design-time review")
+    bt.add_argument("--out", required=True)
+    bv = sub.add_parser("baseline-check", help="validate policy and report current baseline review status")
+    bv.add_argument("--policy", required=True)
+    sub.add_parser("runbook-catalog", help="list offline investigation guidance and sources")
+    rbk = sub.add_parser("runbook-plan", help="generate a non-executable evidence checklist")
+    rbk.add_argument("--analysis", required=True)
+    rbk.add_argument("--incident", required=True)
+    rbk.add_argument("--platform", choices=sorted(runbooks.PLATFORMS), required=True)
+    rbk.add_argument("--out", required=True)
     a = sub.add_parser("analyze", help="offline log analysis; never executes response")
     a.add_argument("--events", nargs="+", required=True)
     a.add_argument("--intel", nargs="*", default=[])
@@ -84,6 +96,9 @@ def parser():
         ac.add_argument("--" + name, required=True)
     ac.add_argument("--out")
     sub.add_parser("rules", help="list built-in behavior rules")
+    ym = sub.add_parser("yunmai-handoff", help="export a manual Yunmai access-policy review; no cloud changes")
+    for name in ("analysis", "mapping", "out"):
+        ym.add_argument("--" + name, required=True)
     q = sub.add_parser("quake-search", help="query Quake passively within declared asset scope")
     q.add_argument("--query", default="service:http")
     q.add_argument("--scope", required=True)
@@ -115,6 +130,28 @@ def parser():
 def dispatch(args):
     now = now_utc()
     cmd = args.command
+    if cmd == "runbook-catalog":
+        return runbooks.catalog()
+    if cmd == "runbook-plan":
+        document = runbooks.create(load_json(args.analysis), args.incident, args.platform, now)
+        write_json(args.out, document)
+        return {"out": args.out, "checks": len(document["checks"]), "changes_applied": False}
+    if cmd == "baseline-template":
+        write_json(args.out, baselines.template(now))
+        return {"out": args.out, "enabled": False, "changes_applied": False}
+    if cmd == "baseline-check":
+        cfg = policy.validate(load_json(args.policy))
+        return {"valid": True, "policy_digest": digest(cfg),
+                "profiles": {name: baselines.profile_status(profile, now)
+                             for name, profile in cfg.get("behavior_baselines", {}).items()}, "changes_applied": False}
+    if cmd == "behavior-demo":
+        base = Path(args.out)
+        inputs = behavior_demo.write_fixtures(base / "inputs", now)
+        return run_analysis([inputs / "events.jsonl"], [], load_json(inputs / "policy.json"), base, now)
+    if cmd == "yunmai-handoff":
+        draft = yunmai.handoff(load_json(args.analysis), load_json(args.mapping), now)
+        write_json(args.out, draft)
+        return {"id": draft["id"], "out": args.out, "cloud_status": "not_submitted", "changes_applied": False}
     if cmd == "demo":
         base = Path(args.out)
         inputs = base / "inputs"
@@ -175,21 +212,13 @@ def dispatch(args):
             journal.close()
     if cmd == "access":
         req, cfg, analysis = load_json(args.request), load_json(args.policy), load_json(args.analysis)
-        policy.validate(cfg)
-        age = (now - timestamp(analysis["generated_at"])).total_seconds()
-        if analysis.get("policy_digest") != digest(cfg) or not 0 <= age <= cfg.get("max_evidence_age_seconds", 900):
-            raise ValueError("fresh analysis under current policy is required")
-        resource = req.get("resource")
-        if not any(e["host"] == resource for e in analysis.get("events", [])):
-            raise ValueError("no telemetry for this resource; access cannot be granted")
-        risk = max((x["risk"] for x in analysis["incidents"] if x["host"] == resource), default=0)
-        result = policy.access_decision(req, cfg, now, risk)
+        result = policy.access_from_analysis(req, cfg, analysis, now)
         if args.out:
             write_json(args.out, result)
         return result
     if cmd == "rules":
         from .rules import get_rules
-        return [{k: r[k] for k in ("id", "title", "score", "stage", "status")} for r in get_rules()]
+        return [{k: r[k] for k in ("id", "title", "score", "stage", "status")} for r in get_rules() + baselines.catalog()]
     raise ValueError("unknown command")
 
 

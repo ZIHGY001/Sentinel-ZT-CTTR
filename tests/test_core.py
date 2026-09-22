@@ -243,9 +243,9 @@ class ResponseTests(Fixture):
         runner=lambda script,check=False:calls.append((script,check))
         with patch('sentinel_zt.response.require_root'):
             with patch('sentinel_zt.response.Journal',wraps=response.Journal):
-                result=response.apply(p,t,self.cfg,self.key,NOW,state,'workstation-demo',True,runner)
+                result=response.apply(p,t,self.cfg,self.key,NOW,state,'workstation-demo',True,runner,clock=lambda:NOW)
                 self.assertEqual(result['status'],'applied')
-                with self.assertRaises(ValueError):response.apply(p,t,self.cfg,self.key,NOW,state,'workstation-demo',True,runner)
+                with self.assertRaises(ValueError):response.apply(p,t,self.cfg,self.key,NOW,state,'workstation-demo',True,runner,clock=lambda:NOW)
                 r=response.rollback(a['id'],self.key,state,NOW,'workstation-demo',True,runner,lambda _:True)
                 self.assertEqual(r['status'],'rolled_back')
         self.assertEqual(len(calls),3)
